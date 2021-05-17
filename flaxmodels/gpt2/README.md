@@ -62,7 +62,6 @@ for i in range(20):
     # Predict next token in sequence
     output = model.apply(params, input_ids=context, past_key_values=past, use_cache=True)
     token = jnp.argmax(output['logits'][..., -1, :])
-    #context = jnp.expand_dims(token, axis=(0, 1))
     context = jnp.expand_dims(token, axis=0)
     # Add token to sequence
     generated += [token]
