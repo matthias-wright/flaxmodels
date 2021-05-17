@@ -179,7 +179,7 @@ output = model.apply(params, input_embds=input_embds, use_cache=True)
 
 <a name="doc_lmhead"></a>
 ### 3.1 GPT2LMHeadModel
-flax_models.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rng=jax.random.PRNGKey(0)*)
+flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rng=jax.random.PRNGKey(0)*)
 
 
 #### Parameters
@@ -210,7 +210,7 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 <a name="doc_model"></a>
 ### 3.2 GPT2Model
 
-flax_models.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None, rng=jax.random.PRNGKey(0)*)
+flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None, rng=jax.random.PRNGKey(0)*)
 
 #### Parameters
 * **config (types.SimpleNamespace)** - Configuration file.

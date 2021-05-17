@@ -103,7 +103,7 @@ Usage is equivalent for VGG19.
 
 <a name="vgg16"></a>
 ### 3.1 VGG16
-flax_models.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
+flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -122,7 +122,7 @@ flax_models.VGG16(*output='softmax', pretrained='imagenet', include_head=True, k
 
 <a name="vgg19"></a>
 ### 3.2 VGG19
-flax_models.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
+flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:

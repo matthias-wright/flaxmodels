@@ -233,7 +233,7 @@ out = discriminator.apply(params, img)
 
 <a name="doc_generator"></a>
 ### 2.1 Generator
-flax_models.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_dim=0, w_dim=512, mapping_layer_features=512, mapping_embed_features=None, num_ws=18, num_mapping_layers=8, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, ckpt_dir=None, use_noise=True, randomize_noise=True, activation='leaky_relu', w_avg_beta=0.995, mapping_lr_multiplier=0.01, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_dim=0, w_dim=512, mapping_layer_features=512, mapping_embed_features=None, num_ws=18, num_mapping_layers=8, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, ckpt_dir=None, use_noise=True, randomize_noise=True, activation='leaky_relu', w_avg_beta=0.995, mapping_lr_multiplier=0.01, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 
 #### Parameters
@@ -292,7 +292,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 <a name="doc_syn"></a>
 ### 2.2 SynthesisNetwork
 
-flax_models.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', use_noise=True, randomize_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', use_noise=True, randomize_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Parameters
 * **resolution (int)** - Output resolution.
@@ -337,7 +337,7 @@ apply(*dlatents_in*)
 
 <a name="doc_map"></a>
 ### 2.3 MappingNetwork
-flax_models.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Parameters
 * **z_dim (int)** - Input latent (Z) dimensionality.
@@ -383,7 +383,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 
 <a name="doc_discriminator"></a>
 ### 2.4 Discriminator
-flax_models.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], pretrained=None, ckpt_dir=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], pretrained=None, ckpt_dir=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Parameters
 * **resolution (int)** - Output resolution.

@@ -78,7 +78,7 @@ Usage is equivalent for ResNet34, ResNet50, ResNet101, and Resnet152.
 
 <a name="resnet18"></a>
 ### 3.1 ResNet18
-flax_models.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -94,7 +94,7 @@ flax_models.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.
 
 <a name="resnet34"></a>
 ### 3.2 ResNet34
-flax_models.ResNet34(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -110,7 +110,7 @@ flax_models.ResNet34(*output='softmax', pretrained='imagenet', include_head=True
 
 <a name="resnet50"></a>
 ### 3.3 ResNet50
-flax_models.ResNet50(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -127,7 +127,7 @@ flax_models.ResNet50(*output='softmax', pretrained='imagenet', include_head=True
 
 <a name="resnet101"></a>
 ### 3.4 ResNet101
-flax_models.ResNet101(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 
 #### Parameters
@@ -145,7 +145,7 @@ flax_models.ResNet101(*output='softmax', pretrained='imagenet', include_head=Tru
 
 <a name="resnet152"></a>
 ### 3.5 ResNet152
-flax_models.ResNet152(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None>*) -> flax.linen.Module
+flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None>*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
