@@ -187,7 +187,7 @@ for row in range(len(row_seeds)):
         w = jnp.expand_dims(w, axis=0)
         image = synthesis_net.apply(synthesis_params, w)
         # Remove batch dimension
-        image = np.squeeze(image, axis=0)
+        image = jnp.squeeze(image, axis=0)
 
         # Normalize image to be in range [0, 1]
         image = (image - jnp.min(image)) / (jnp.max(image) - jnp.min(image))
