@@ -28,7 +28,7 @@
 
 <a name="usage"></a>
 ## 2. Basic Usage
-For more usages check out this [Colab](https://colab.research.google.com/drive/1j58Bnt1n-k4UJRQI9jnJAJIxME8ZDZjj?usp=sharing).
+For more usage examples check out this [Colab](https://colab.research.google.com/drive/1j58Bnt1n-k4UJRQI9jnJAJIxME8ZDZjj?usp=sharing).
 
 This is very simple greedy text generation. There are more sophisticated <a href="https://huggingface.co/blog/how-to-generate">methods</a> out there.
 ```python
