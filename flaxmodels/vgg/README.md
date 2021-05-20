@@ -6,10 +6,7 @@
 
 ##### Table of Contents 
 * [1. Important Note](#note)
-* [2. Example usages](#usages)
-  * [2.1 Get classifier scores](#get_class_scores)
-  * [2.2 Get activations (including classifier scores)](#get_activations)
-  * [2.3 Get activations for image of arbitrary size](#get_activations_arb)
+* [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
   * [3.1 VGG16](#vgg16)
   * [3.2 VGG19](#vgg19)
@@ -20,11 +17,10 @@
 ## 1. Important Note
 Images must be in range [0, 1]. If the pretrained ImageNet weights are selected, the images are internally normalized with the ImageNet mean and standard deviation.
 
-<a name="usages"></a>
-## 2. Example usages
+<a name="usage"></a>
+## 2. Basic Usage
+For more usage examples check out this [Colab](https://colab.research.google.com/drive/1wIzRnxlxJmrZNsUthtjKWPKULKzvacPD?usp=sharing).
 
-<a name="get_class_scores"></a>
-### 2.1 Get classifier scores
 ```python
 from PIL import Image
 import jax
@@ -47,55 +43,6 @@ params = vgg16.init(key, x)
 out = vgg16.apply(params, x)
 
 ```
-
-<a name="get_activations"></a>
-### 2.2 Get activations (including classifier scores)
-```python
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-# Load image
-img = Image.open('example.jpg')
-# Image must be 224x224 if classification head is included
-img = img.resize((224, 224))
-# Image should be in range [0, 1]
-x = jnp.array(img, dtype=jnp.float32) / 255.0
-# Add batch dimension
-x = jnp.expand_dims(x, axis=0)
-
-vgg16 = fm.VGG16(output='activations', pretrained='imagenet')
-params = vgg16.init(key, x)
-out = vgg16.apply(params, x)
-
-```
-
-<a name="get_activations_arb"></a>
-### 2.3 Get activations for image of arbitrary size
-```python
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-# Load image
-img = Image.open('example.jpg')
-# Image should be in range [0, 1]
-x = jnp.array(img, dtype=jnp.float32) / 255.0
-# Add batch dimension
-x = jnp.expand_dims(x, axis=0)
-
-vgg16 = fm.VGG16(output='activations', include_head=False, pretrained='imagenet')
-params = vgg16.init(key, x)
-out = vgg16.apply(params, x)
-
-```
-
 Usage is equivalent for VGG19.
 
 <a name="documentation"></a>
