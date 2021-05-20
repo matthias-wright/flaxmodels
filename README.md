@@ -33,6 +33,9 @@ For CPU-only you can skip step 1.
 ### Documentation
 The documentation for the models is on the individual model pages.
 
+### Checkpoints
+The checkpoints are taken from the repositories that are referenced on the model pages. The processing steps and the format of the checkpoints are documented [here](flaxmodels/docs/Documentation.md#1-checkpoints).
+
 ### Testing
 To run the tests, pytest needs to be installed. 
 ```sh
@@ -40,6 +43,8 @@ To run the tests, pytest needs to be installed.
 > cd flaxmodels
 > python -m pytest tests/
 ```
+See [here](flaxmodels/docs/Documentation.md#2-testing) for an explanation of the testing strategy.
+
 
 ### Acknowledgments
 Thank you to the developers of Jax and Flax. The title image is a photograph of a flax flower, kindly made available by <a href="https://unsplash.com/@matyszczyk">Marta Matyszczyk</a>. 
