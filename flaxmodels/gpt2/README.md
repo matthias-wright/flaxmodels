@@ -7,12 +7,7 @@
 
 ##### Table of Contents
 * [1. Models](#models)
-* [2. Example usages](#usages)
-  * [2.1 Generate text](#gen_img_wo_trunc)
-  * [2.2 Get language model head output from text input](#output_lm_head_text)
-  * [2.3 Get language model head output from embeddings](#output_lm_head_embd)
-  * [2.4 Get model output from text input](#output_model_text)
-  * [2.5 Get model output from embeddings](#output_model_embd)
+* [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
   * [3.1 GPT2LMHeadModel](#doc_lmhead)
   * [3.2 GPT2Model](#doc_model)
@@ -31,11 +26,10 @@
 | gpt2-xl  | ~ 1.5 Billion | ~ 6 GB | <a href="https://huggingface.co/gpt2-xl">https://huggingface.co/gpt2-xl</a> |
 
 
-<a name="usages"></a>
-## 2. Example usages
+<a name="usage"></a>
+## 2. Basic Usage
+For more usages check out this [Colab](https://colab.research.google.com/drive/1j58Bnt1n-k4UJRQI9jnJAJIxME8ZDZjj?usp=sharing).
 
-<a name="gen_img_wo_trunc"></a>
-### 2.1 Generate text
 This is very simple greedy text generation. There are more sophisticated <a href="https://huggingface.co/blog/how-to-generate">methods</a> out there.
 ```python
 import jax
@@ -72,106 +66,6 @@ for i in range(20):
 sequence = tokenizer.decode(generated)
 print(sequence)
 ```
-
-
-<a name="output_lm_head_text"></a>
-### 2.2 Get language model head output from text input
-
-```python
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-# Initialize tokenizer
-tokenizer = fm.gpt2.get_tokenizer()
-
-# Encode start sequence
-input_ids = tokenizer.encode('The Manhattan bridge')
-input_ids = jnp.array([input_ids])
-
-# Initialize model
-model = fm.gpt2.GPT2LMHeadModel(pretrained='gpt2')
-params = model.init(key, input_ids=input_ids)
-
-# Compute output
-output = model.apply(params, input_ids=input_ids, use_cache=True)
-# output: {'last_hidden_state': ..., 'past_key_values': ..., 'loss': ..., 'logits': ...}
-```
-
-
-<a name="output_lm_head_embd"></a>
-### 2.3 Get language model head output from embeddings
-
-```python
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-                                                                    
-key = jax.random.PRNGKey(0)
-
-# Dummy input                                        
-input_embds = jax.random.normal(key, shape=(2, 10, 768))
-
-# Initialize model
-model = fm.gpt2.GPT2LMHeadModel(pretrained='gpt2')
-params = model.init(key, input_embds=input_embds)
-# Compute output
-output = model.apply(params, input_embds=input_embds, use_cache=True)
-# output: {'last_hidden_state': ..., 'past_key_values': ..., 'loss': ..., 'logits': ...}
-```
-
-
-<a name="output_model_text"></a>
-### 2.4 Get model output from text input
-
-```python
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-# Initialize tokenizer
-tokenizer = fm.gpt2.get_tokenizer()
-
-# Encode start sequence
-input_ids = tokenizer.encode('The Manhattan bridge')
-input_ids = jnp.array([input_ids])
-
-# Initialize model
-model = fm.gpt2.GPT2Model(pretrained='gpt2')
-params = model.init(key, input_ids=input_ids)
-
-# Compute output
-output = model.apply(params, input_ids=input_ids, use_cache=True)
-# output: {'last_hidden_state': ..., 'past_key_values': ...}
-```
-
-
-<a name="output_model_embd"></a>
-### 2.5 Get model output from embeddings
-
-```python
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-                                                                    
-key = jax.random.PRNGKey(0)
-
-# Dummy input
-input_embds = jax.random.normal(key, shape=(2, 10, 768))
-                                                                                                      
-# Initialize model
-model = fm.gpt2.GPT2Model(pretrained='gpt2')
-params = model.init(key, input_embds=input_embds)
-
-# Compute output
-output = model.apply(params, input_embds=input_embds, use_cache=True)
-# output: {'last_hidden_state': ..., 'past_key_values': ...}
-```
-
 
 <a name="documentation"></a>
 ## 3. Documentation
