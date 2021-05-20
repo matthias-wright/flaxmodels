@@ -145,6 +145,9 @@ def VGG16(output='softmax',
             If this argument is None, the weights will be saved to a temp directory.
         rng (jax.numpy.ndarray): 
             Random seed.
+
+    Returns:
+        (nn.Module): VGG network.
     """
     return VGG(output=output,
                pretrained=pretrained,
@@ -194,6 +197,9 @@ def VGG19(output='softmax',
             If this argument is None, the weights will be saved to a temp directory.
         rng (jax.numpy.ndarray): 
             Random seed.
+
+    Returns:
+        (nn.Module): VGG network.
     """
     return VGG(output=output,
                pretrained=pretrained,

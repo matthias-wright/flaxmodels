@@ -217,7 +217,7 @@ def ResNet18(output='softmax',
     Reference: https://arxiv.org/abs/1512.03385
 
     The pretrained parameters are taken from:
-    https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
+    https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
     
     Args:
         output (str):
@@ -237,6 +237,9 @@ def ResNet18(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+
+    Returns:
+        (nn.Module): ResNet network.
     """
     return ResNet(output=output,
                   pretrained=pretrained,
@@ -257,7 +260,7 @@ def ResNet34(output='softmax',
     Reference: https://arxiv.org/abs/1512.03385
 
     The pretrained parameters are taken from:
-    https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
+    https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
     
     Args:
         output (str):
@@ -277,6 +280,9 @@ def ResNet34(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+
+    Returns:
+        (nn.Module): ResNet network.
     """
     return ResNet(output=output,
                   pretrained=pretrained,
@@ -297,7 +303,7 @@ def ResNet50(output='softmax',
     Reference: https://arxiv.org/abs/1512.03385
 
     The pretrained parameters are taken from:
-    https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
+    https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
     
     Args:
         output (str):
@@ -317,6 +323,9 @@ def ResNet50(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+
+    Returns:
+        (nn.Module): ResNet network.
     """
     return ResNet(output=output,
                   pretrained=pretrained,
@@ -337,7 +346,7 @@ def ResNet101(output='softmax',
     Reference: https://arxiv.org/abs/1512.03385
 
     The pretrained parameters are taken from:
-    https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
+    https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
     
     Args:
         output (str):
@@ -357,6 +366,9 @@ def ResNet101(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+
+    Returns:
+        (nn.Module): ResNet network.
     """
     return ResNet(output=output,
                   pretrained=pretrained,
@@ -377,7 +389,7 @@ def ResNet152(output='softmax',
     Reference: https://arxiv.org/abs/1512.03385
 
     The pretrained parameters are taken from:
-    https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
+    https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
     
     Args:
         output (str):
@@ -397,6 +409,9 @@ def ResNet152(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+
+    Returns:
+        (nn.Module): ResNet network.
     """
     return ResNet(output=output,
                   pretrained=pretrained,

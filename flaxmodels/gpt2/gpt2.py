@@ -20,9 +20,17 @@ CONFIGS = {'gpt2': 'https://www.dropbox.com/s/s5xl32dgwc8322p/gpt2.json?dl=1',
 
 
 class GPT2SelfAttention(nn.Module):
-    config: dict=None               # Configuration object. If 'pretrained' is not None, this parameter will be ignored.
-    param_dict: dict=None           # Parameter dict with pretrained parameters.
-    rng: Any=jax.random.PRNGKey(0)  # Random seed.
+    """
+    GPT2 Self Attention.
+
+    Attributes:
+        config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
+        param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        rng (Any): Random seed.
+    """
+    config: dict=None
+    param_dict: dict=None
+    rng: Any=jax.random.PRNGKey(0)
     
     def setup(self):
         self.max_pos = self.config.n_positions
@@ -35,6 +43,20 @@ class GPT2SelfAttention(nn.Module):
 
     @nn.compact
     def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False):
+        """
+        Run attention.
+
+        Args:
+            x (tensor): Input tensor.
+            layer_past (Tuple): Tuple of past keys and values.
+            attn_mask (tensor): Mask to avoid performing attention on padding token indices.
+            head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
+            use_cache (bool): If True, keys and values are returned (past_key_values).
+            training (bool): Training mode.
+
+        Returns:
+            (tensor, Tuple): Output tensor, tuple of keys and values.
+        """
         x = ops.linear(3 * self.embd_dim, ops.get(self.param_dict, 'c_proj'))(x)
         query, key, value = jnp.split(x, 3, axis=2)
 
@@ -62,10 +84,19 @@ class GPT2SelfAttention(nn.Module):
 
 
 class GPT2MLP(nn.Module):
-    intermediate_dim: int           # Dimension of the intermediate layer.
-    config: dict=None               # Configuration object. If 'pretrained' is not None, this parameter will be ignored.
-    param_dict: dict=None           # Parameter dict with pretrained parameters.
-    rng: Any=jax.random.PRNGKey(0)  # Random seed.
+    """
+    GPT2 MLP.
+
+    Attributes:
+        intermediate_dim (int): Dimension of the intermediate layer.
+        config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
+        param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        rng (Any): Random seed.
+    """
+    intermediate_dim: int
+    config: dict=None
+    param_dict: dict=None
+    rng: Any=jax.random.PRNGKey(0)
     
     def setup(self):
         self.embd_dim = self.config.n_embd
@@ -74,6 +105,13 @@ class GPT2MLP(nn.Module):
 
     @nn.compact
     def __call__(self, x, training=False):
+        """
+        Run the MLP.
+
+        Args:
+            x (tensor): Input tensor.
+            training (bool): Training mode.
+        """
         x = ops.linear(self.intermediate_dim, ops.get(self.param_dict, 'c_fc'))(x)
         x = ops.apply_activation(x, activation=self.activation)
         x = ops.linear(self.embd_dim, ops.get(self.param_dict, 'c_proj'))(x)
@@ -82,9 +120,17 @@ class GPT2MLP(nn.Module):
 
 
 class GPT2Block(nn.Module):
-    config: dict=None               # Configuration object. If 'pretrained' is not None, this parameter will be ignored.
-    param_dict: dict=None           # Parameter dict with pretrained parameters.
-    rng: Any=jax.random.PRNGKey(0)  # Random seed.
+    """
+    GPT2 Block.
+
+    Attributes:
+        config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
+        param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        rng (Any): Random seed.
+    """
+    config: dict=None
+    param_dict: dict=None
+    rng: Any=jax.random.PRNGKey(0)
     
     def setup(self):
         self.embd_dim = self.config.n_embd
@@ -93,6 +139,20 @@ class GPT2Block(nn.Module):
 
     @nn.compact
     def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False):
+        """
+        Run the block.
+
+        Args:
+            x (tensor): Input tensor.
+            layer_past (Tuple): Tuple of past keys and values.
+            attn_mask (tensor): Mask to avoid performing attention on padding token indices.
+            head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
+            use_cache (bool): If True, keys and values are returned (past_key_values).
+            training (bool): Training mode.
+
+        Returns:
+            (tensor, Tuple): Output tensor, tuple of keys and values.
+        """
         residual = x
         x = ops.layer_norm(ops.get(self.param_dict, 'ln_1'), eps=self.eps)(x)
         kwargs = {'layer_past': layer_past, 'attn_mask': attn_mask,
@@ -108,11 +168,21 @@ class GPT2Block(nn.Module):
 
 
 class GPT2Model(nn.Module):
-    config: dict=None               # Configuration object. If 'pretrained' is not None, this parameter will be ignored.
-    pretrained: str=None            # Which pretrained model to use, None for random initialization.
-    ckpt_dir: str=None              # Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
-    param_dict: dict=None           # Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-    rng: Any=jax.random.PRNGKey(0)  # Random seed.
+    """
+    The GPT2 Model.
+
+    Attributes:
+        config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
+        pretrained (str): Which pretrained model to use, None for random initialization.
+        ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
+        param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        rng (Any): Random seed.
+    """
+    config: dict=None
+    pretrained: str=None
+    ckpt_dir: str=None
+    param_dict: dict=None
+    rng: Any=jax.random.PRNGKey(0)
     
     def setup(self):
         if self.pretrained is not None:
@@ -133,15 +203,33 @@ class GPT2Model(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 input_ids=None,        # Input token ids, shape [B, seq_len].
-                 past_key_values=None,  # Precomputed hidden keys and values, tuple of tuples.
-                 input_embds=None,      # Input embeddings, shape [B, seq_len, embd_dim].
-                 position_ids=None,     # Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
-                 attn_mask=None,        # Mask to avoid performing attention on padding token indices, shape [B, seq_len].
-                 head_mask=None,        # Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
-                 use_cache=False,       # If True, keys and values are returned (past_key_values).
-                 training=False):       # Training mode.
+                 input_ids=None,
+                 past_key_values=None,
+                 input_embds=None,
+                 position_ids=None,
+                 attn_mask=None,
+                 head_mask=None,
+                 use_cache=False,
+                 training=False):
+        """
+        Run the model.
 
+        Args:
+            input_ids (tensor): Input token ids, shape [B, seq_len].
+            past_key_values (Tuple): Precomputed hidden keys and values, tuple of tuples.
+                                     If past_key_values is used, only input_ids that do not have their
+                                     past calculated should be passed as input_ids.
+            input_embds (tensor): Input embeddings, shape [B, seq_len, embd_dim].
+            labels (tensor): Labels for language modeling, shape [B, seq_len]. Will be shifted inside the model. Ignore label = -100.
+            position_ids (tensor): Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
+            attn_mask (tensor): Mask to avoid performing attention on padding token indices, shape [B, seq_len].
+            head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
+            use_cache (bool): If True, keys and values are returned (past_key_values).
+            training (bool): Training mode.
+
+        Returns:
+            (dict): Dictionary containing 'last_hidden_state', 'past_key_values'.            
+        """
         if input_ids is not None and input_embds is not None:
             raise ValueError('You cannot specify both input_ids and input_embd at the same time.')
         elif input_ids is not None:
@@ -197,10 +285,19 @@ class GPT2Model(nn.Module):
 
 
 class GPT2LMHeadModel(nn.Module):
-    config: dict=None               # Configuration object. If 'pretrained' is not None, this parameter will be ignored.
-    pretrained: str=None            # Which pretrained model to use, None for random initialization.
-    ckpt_dir: str=None              # Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
-    rng: Any=jax.random.PRNGKey(0)  # Random seed.
+    """
+    The GPT2 Model transformer with a language model head on top.
+
+    Attributes:
+        config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
+        pretrained (str): Which pretrained model to use, None for random initialization.
+        ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
+        rng (Any): Random seed.
+    """
+    config: Any=None
+    pretrained: str=None
+    ckpt_dir: str=None
+    rng: Any=jax.random.PRNGKey(0)
     
     def setup(self):
         if self.pretrained is not None:
@@ -220,16 +317,34 @@ class GPT2LMHeadModel(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 input_ids=None,        # Input token ids, shape [B, seq_len].
-                 past_key_values=None,  # Precomputed hidden keys and values, tuple of tuples.
-                 input_embds=None,      # Input embeddings, shape [B, seq_len, embd_dim].
-                 labels=None,           # Labels for language modeling, shape [B, seq_len]. Will be shifted inside the model. Ignore label = -100.
-                 position_ids=None,     # Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
-                 attn_mask=None,        # Mask to avoid performing attention on padding token indices, shape [B, seq_len].
-                 head_mask=None,        # Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
-                 use_cache=False,       # If True, keys and values are returned (past_key_values).
-                 training=False):       # Training mode.
+                 input_ids=None,
+                 past_key_values=None,
+                 input_embds=None,
+                 labels=None,
+                 position_ids=None,
+                 attn_mask=None,
+                 head_mask=None,
+                 use_cache=False,
+                 training=False):
+        """
+        Run the model.
 
+        Args:
+            input_ids (tensor): Input token ids, shape [B, seq_len].
+            past_key_values (Tuple): Precomputed hidden keys and values, tuple of tuples.
+                                     If past_key_values is used, only input_ids that do not have their
+                                     past calculated should be passed as input_ids.
+            input_embds (tensor): Input embeddings, shape [B, seq_len, embd_dim].
+            labels (tensor): Labels for language modeling, shape [B, seq_len]. Will be shifted inside the model. Ignore label = -100.
+            position_ids (tensor): Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
+            attn_mask (tensor): Mask to avoid performing attention on padding token indices, shape [B, seq_len].
+            head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
+            use_cache (bool): If True, keys and values are returned (past_key_values).
+            training (bool): Training mode.
+
+        Returns:
+            (dict): Dictionary containing 'last_hidden_state', 'past_key_values', 'loss', and 'logits'.            
+        """
         kwargs = {'input_ids': input_ids,
                   'past_key_values': past_key_values,
                   'input_embds': input_embds, 
