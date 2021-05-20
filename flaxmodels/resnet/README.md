@@ -5,9 +5,7 @@
 
 ##### Table of Contents 
 * [1. Important Note](#note)
-* [2. Example usages](#usages)
-  * [2.1 Get classifier scores](#get_class_scores)
-  * [2.2 Get activations](#get_activations)
+* [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
   * [3.1 ResNet18](#resnet18)
   * [3.2 ResNet34](#resnet34)
@@ -20,11 +18,10 @@
 ## 1. Important Note
 Images must be in range [0, 1]. If the pretrained ImageNet weights are selected, the images are internally normalized with the ImageNet mean and standard deviation.
 
-<a name="usages"></a>
-## 2. Example usages
+<a name="usage"></a>
+## 2. Basic Usage
+For more usage examples check out this [Colab](https://colab.research.google.com/drive/1hjOV3_3OT5xz0iaj4fdCJurL7XWBJUWc?usp=sharing).
 
-<a name="get_class_scores"></a>
-### 2.1 Get classifier scores
 ```python
 from PIL import Image
 import jax
@@ -46,31 +43,6 @@ params = resnet18.init(key, x)
 out = resnet18.apply(params, x)
 
 ```
-
-<a name="get_activations"></a>
-### 2.2 Get activations
-```python
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-# Load image
-img = Image.open('example.jpg')
-# Image should be in range [0, 1]
-x = jnp.array(img, dtype=jnp.float32) / 255.0
-# Add batch dimension
-x = jnp.expand_dims(x, axis=0)
-
-resnet18 = fm.ResNet18(output='activations', pretrained='imagenet')
-params = resnet18.init(key, x)
-# Dictionary
-out = resnet18.apply(params, x)
-
-```
-
 Usage is equivalent for ResNet34, ResNet50, ResNet101, and Resnet152.
 
 <a name="documentation"></a>
