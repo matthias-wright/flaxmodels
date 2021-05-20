@@ -6,12 +6,7 @@
 <b>Repository:</b> <a href="https://github.com/NVlabs/stylegan2">https://github.com/NVlabs/stylegan2</a> and <a href="https://github.com/NVlabs/stylegan2-ada">https://github.com/NVlabs/stylegan2-ada</a>
 
 ##### Table of Contents  
-* [1. Example usages](#usages)
-  * [1.1 Generate images without truncation](#gen_img_wo_trunc)
-  * [1.2 Generate images with truncation](#gen_img_w_trunc)
-  * [1.3 Generate images with labels](#gen_img_w_labels)
-  * [1.4 Generate images with style mixing](#gen_img_w_sm)
-  * [1.5 Get Discriminator outputs](#dis_output)
+* [1. Basic Usage](#usage)
 * [2. Documentation](#documentation)
   * [2.1 Generator](#doc_generator)
   * [2.2 SynthesisNetwork](#doc_syn)
@@ -32,11 +27,9 @@
 * [4. License](#license)
 
 
-<a name="usages"></a>
-## 1. Example usages
-
-<a name="gen_img_wo_trunc"></a>
-### 1.1 Generate images without truncation
+<a name="usage"></a>
+## 1. Basic Usage
+For more usage examples check out this [Colab](https://colab.research.google.com/drive/1klNP4LbrXK5P3KwFM9_PqCVx5MwwilCI?usp=sharing).
 
 ```python
 import numpy as np
@@ -65,168 +58,6 @@ for i in range(images.shape[0]):
 ```
 
 <div align="center"><img src="images/gen_images_wo_trunc.jpg" alt="img" width="800"></div>
-
-<a name="gen_img_w_trunc"></a>
-### 1.2 Generate images with truncation
-
-```python
-import numpy as np
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-# Seed
-key = jax.random.PRNGKey(0)
-
-# Input noise
-z = jax.random.normal(key, shape=(4, 512))
-
-generator = fm.stylegan2.Generator(pretrained='metfaces')
-params = generator.init(key, z, truncation_psi=0.5)
-images = generator.apply(params, z, truncation_psi=0.5)
-
-# Normalize images to be in range [0, 1]
-images = (images - jnp.min(images)) / (jnp.max(images) - jnp.min(images))
-
-# Save images
-for i in range(images.shape[0]):
-    Image.fromarray(np.uint8(images[i] * 255)).save(f'image_{i}.jpg')
-
-```
-
-<div align="center"><img src="images/gen_images_w_trunc.jpg" alt="img" width="800"></div>
-
-<a name="gen_img_w_labels"></a>
-### 1.3 Generate images with labels
-
-```python
-import numpy as np
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-# Seed
-key = jax.random.PRNGKey(0)
-
-label = np.zeros((2, 10))
-label[0, 0] = 1 # airplane
-label[1, 7] = 1 # horse
-
-# Input labels
-label = jnp.array(label)
-
-# Input noise
-z = jax.random.normal(key, shape=(2, 512))
-
-generator = fm.stylegan2.Generator(pretrained='cifar10')
-params = generator.init(key, z, label)
-images = generator.apply(params, z, label)
-
-# Normalize images to be in range [0, 1]
-images = (images - jnp.min(images)) / (jnp.max(images) - jnp.min(images))
-
-# Save images
-for i in range(images.shape[0]):
-    Image.fromarray(np.uint8(images[i] * 255)).save(f'image_{i}.jpg')
-```
-
-<div align="center"><img src="images/gen_images_with_labels.jpg" alt="img" width="500"></div>
-
-<a name="gen_img_w_sm"></a>
-### 1.4 Generate images with style mixing
-
-```python
-import numpy as np
-from PIL import Image
-import jax
-import jax.numpy as jnp
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-
-# Initialize Mapping Network
-mapping_net = fm.stylegan2.MappingNetwork(pretrained='ffhq')
-mapping_params = mapping_net.init(key, jnp.zeros((1, 512)))
-
-# Initialize Synthesis Network
-synthesis_net = fm.stylegan2.SynthesisNetwork(pretrained='ffhq')
-synthesis_params = synthesis_net.init(key, jnp.zeros((1, 18, 512)))
-
-# Seeds
-row_seeds = [21, 7, 96, 0]
-col_seeds = [27, 42, 99, 60]
-all_seeds = row_seeds + col_seeds
-
-# Generate noise inputs, [minibatch, component]
-all_z = jnp.concatenate([jax.random.normal(jax.random.PRNGKey(seed), shape=(1, 512)) for seed in all_seeds])
-
-# Generate latent vectors, [minibatch, num_ws, component]
-all_w = mapping_net.apply(mapping_params, all_z, truncation_psi=0.5)
-
-# Generate images, [minibatch, H, W, 3]
-all_images = synthesis_net.apply(synthesis_params, all_w)
-
-# Normalize image to be in range [0, 1]
-all_images = (all_images - jnp.min(all_images)) / (jnp.max(all_images) - jnp.min(all_images))
-
-col_images = np.concatenate([all_images[i] for i in range(len(row_seeds))], axis=0)
-row_images = np.concatenate([all_images[len(row_seeds) + i] for i in range(len(col_seeds))], axis=1)
-
-images_grid = []
-
-# Generate style mixing images
-for row in range(len(row_seeds)):
-    image_row = []
-    for col in range(len(col_seeds)):
-        # Combine first 9 dimensions from row seed latent w with last 9 dimensions from col seed latent w
-        w = jnp.concatenate([all_w[row, :9], all_w[len(row_seeds) + col, 9:]], axis=0)
-        # Add batch dimension
-        w = jnp.expand_dims(w, axis=0)
-        image = synthesis_net.apply(synthesis_params, w)
-        # Remove batch dimension
-        image = jnp.squeeze(image, axis=0)
-
-        # Normalize image to be in range [0, 1]
-        image = (image - jnp.min(image)) / (jnp.max(image) - jnp.min(image))
-        image_row.append(image)
-    image_row = np.concatenate(image_row, axis=1)
-    images_grid.append(image_row)
-
-images_grid = np.concatenate(images_grid, axis=0)
-
-# Add row and column images to the grid
-border = 20
-grid = np.ones((row_images.shape[0] + images_grid.shape[0] + border, 
-                col_images.shape[1] + images_grid.shape[1] + border,
-                3))
-grid[grid.shape[0] - images_grid.shape[0]:, grid.shape[1] - images_grid.shape[1]:] = images_grid
-grid[:row_images.shape[0], grid.shape[1] - row_images.shape[1]:] = row_images
-grid[grid.shape[0] - col_images.shape[0]:, :col_images.shape[1]] = col_images
-Image.fromarray(np.uint8(grid * 255)).save('style_mixing_grid.jpg')
-```
-
-<div align="center"><img src="images/style_mixing.jpg" alt="img" width="700"></div>
-
-
-<a name="dis_output"></a>
-### 1.5 Get Discriminator outputs
-
-```python
-import jax
-import flaxmodels as fm
-
-key = jax.random.PRNGKey(0)
-
-img = jax.random.normal(key, shape=(1, 1024, 1024, 3))
-
-discriminator = fm.stylegan2.Discriminator(pretrained='metfaces')
-params = discriminator.init(key, img)
-out = discriminator.apply(params, img)
-```
-
 
 <a name="documentation"></a>
 ## 2. Documentation
