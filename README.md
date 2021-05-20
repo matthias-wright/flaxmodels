@@ -34,7 +34,7 @@ For CPU-only you can skip step 1.
 The documentation for the models is on the individual model pages.
 
 ### Checkpoints
-The checkpoints are taken from the repositories that are referenced on the model pages. The processing steps and the format of the checkpoints are documented [here](flaxmodels/docs/Documentation.md#1-checkpoints).
+The checkpoints are taken from the repositories that are referenced on the model pages. The processing steps and the format of the checkpoints are documented [here](docs/Documentation.md#1-checkpoints).
 
 ### Testing
 To run the tests, pytest needs to be installed. 
@@ -43,7 +43,7 @@ To run the tests, pytest needs to be installed.
 > cd flaxmodels
 > python -m pytest tests/
 ```
-See [here](flaxmodels/docs/Documentation.md#2-testing) for an explanation of the testing strategy.
+See [here](docs/Documentation.md#2-testing) for an explanation of the testing strategy.
 
 
 ### Acknowledgments
