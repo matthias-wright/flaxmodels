@@ -71,18 +71,41 @@ MBSTD_GROUP_SIZE = {'metfaces': None,
 
 
 class LinearLayer(nn.Module):
+    """
+    Linear Layer.
+
+    Attributes:
+        in_features (int): Input dimension.
+        out_features (int): Output dimension.
+        use_bias (bool): If True, use bias.
+        lr_multiplier (float): Learning rate multiplier.
+        activation (str): Activation function: 'relu', 'lrelu', etc.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        layer_name (str): Layer name.
+        dtype (str): Data type.
+        rng (jax.random.PRNGKey): Random seed.
+    """
     in_features: int
     out_features: int
     use_bias: bool=True
     lr_multiplier: float=1
     activation: str='linear'
-    param_dict: Any=None
+    param_dict: h5py.Group=None
     layer_name: str=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x):
+        """
+        Run Linear Layer.
+        
+        Args:
+            x (tensor): Input tensor of shape [N, in_features].
+            
+        Returns:
+            (tensor): Output tensor of shape [N, out_features].
+        """
         w_shape = [self.in_features, self.out_features]
         params = ops.get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng, self.dtype)
 
@@ -100,17 +123,38 @@ class LinearLayer(nn.Module):
 
 
 class FromRGBLayer(nn.Module):
+    """
+    From RGB Layer.
+
+    Attributes:
+        fmaps (int): Number of output channels of the convolution.
+        kernel (int): Kernel size of the convolution.
+        lr_multiplier (float): Learning rate multiplier.
+        activation (str): Activation function: 'relu', 'lrelu', etc.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        dtype (str): Data dtype.
+        rng (jax.random.PRNGKey): Random seed.
+    """
     fmaps: int
-    res: int
     kernel: int=1
     lr_multiplier: float=1
     activation: str='leaky_relu'
-    param_dict: Any=None
+    param_dict: h5py.Group=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x, y):
+        """
+        Run From RGB Layer.
+
+        Args:
+            x (tensor): Input image of shape [N, H, W, num_channels].
+            y (tensor): Input tensor of shape [N, H, W, out_channels].
+
+        Returns:
+            (tensor): Output tensor of shape [N, H, W, out_channels].
+        """
         w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
         w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'fromrgb', self.rng, self.dtype)
 
@@ -126,6 +170,22 @@ class FromRGBLayer(nn.Module):
 
 
 class DiscriminatorLayer(nn.Module):
+    """
+    Discriminator Layer.
+
+    Attributes:
+        fmaps (int): Number of output channels of the convolution.
+        kernel (int): Kernel size of the convolution.
+        use_bias (bool): If True, use bias.
+        down (bool): If True, downsample the spatial resolution.
+        resample_kernel (Tuple): Kernel that is used for FIR filter.
+        activation (str): Activation function: 'relu', 'lrelu', etc.
+        layer_name (str): Layer name.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        lr_multiplier (float): Learning rate multiplier.
+        dtype (str): Data dtype.
+        rng (jax.random.PRNGKey): Random seed.       
+    """
     fmaps: int
     kernel: int=3
     use_bias: bool=True
@@ -133,13 +193,22 @@ class DiscriminatorLayer(nn.Module):
     resample_kernel: Tuple=None
     activation: str='leaky_relu'
     layer_name: str=None
-    param_dict: Any=None
+    param_dict: h5py.Group=None
     lr_multiplier: float=1
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x):
+        """
+        Run Discriminator Layer.
+
+        Args:
+            x (tensor): Input tensor of shape [N, H, W, C].
+
+        Returns:
+            (tensor): Output tensor of shape [N, H, W, fmaps].
+        """
         w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
         if self.use_bias:
             w, b = ops.get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng, self.dtype)
@@ -156,6 +225,21 @@ class DiscriminatorLayer(nn.Module):
 
 
 class DiscriminatorBlock(nn.Module):
+    """
+    Discriminator Block.
+
+    Attributes:
+        fmaps (int): Number of output channels of the convolution.
+        kernel (int): Kernel size of the convolution.
+        resample_kernel (Tuple): Kernel that is used for FIR filter.
+        activation (str): Activation function: 'relu', 'lrelu', etc.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        lr_multiplier (float): Learning rate multiplier.
+        architecture (str): Architecture: 'orig', 'resnet'.
+        nf (Callable): Callable that returns the number of feature maps for a given layer.
+        dtype (str): Data dtype.
+        rng (jax.random.PRNGKey): Random seed.       
+    """
     res: int
     kernel: int=3
     resample_kernel: Tuple=(1, 3, 3, 1)
@@ -169,6 +253,15 @@ class DiscriminatorBlock(nn.Module):
 
     @nn.compact
     def __call__(self, x):
+        """
+        Run Discriminator Block.
+
+        Args:
+            x (tensor): Input tensor of shape [N, H, W, C].
+
+        Returns:
+            (tensor): Output tensor of shape [N, H, W, fmaps].
+        """
         residual = x
         
         for i in range(2):
@@ -202,33 +295,57 @@ class DiscriminatorBlock(nn.Module):
 
 
 class Discriminator(nn.Module):
+    """
+    Discriminator.
+
+    Attributes:
+        resolution (int): Input resolution. Overridden based on dataset.
+        num_channels (int): Number of input color channels. Overridden based on dataset.
+        c_dim (int): Dimensionality of the labels (c), 0 if no labels. Overrttten based on dataset.
+        fmap_base (int): Overall multiplier for the number of feature maps.
+        fmap_decay (int): Log2 feature map reduction when doubling the resolution.
+        fmap_min (int): Minimum number of feature maps in any layer.
+        fmap_max (int): Maximum number of feature maps in any layer.
+        mapping_layers (int): Number of additional mapping layers for the conditioning labels.
+        mapping_fmaps (int): Number of activations in the mapping layers, None = default.
+        mapping_lr_multiplier (float): Learning rate multiplier for the mapping layers.
+        architecture (str): Architecture: 'orig', 'resnet'.
+        activation (int): Activation function: 'relu', 'leaky_relu', etc.
+        mbstd_group_size (int): Group size for the minibatch standard deviation layer, None = entire minibatch.
+        mbstd_num_features (int): Number of features for the minibatch standard deviation layer, 0 = disable.
+        resample_kernel (Tuple): Low-pass filter to apply when resampling activations, None = box filter.
+        pretrained (str): Use pretrained model, None for random initialization.
+        ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
+        dtype (str): Data type.
+        rng (jax.random.PRNGKey): Random seed.       
+    """
     # Input dimensions.
-    resolution: int=1024                # Input resolution. Overridden based on dataset.
-    num_channels: int=3                 # Number of input color channels. Overridden based on dataset.
-    c_dim: int=0                        # Dimensionality of the labels (c), 0 if no labels. Overrttten based on dataset.
+    resolution: int=1024
+    num_channels: int=3
+    c_dim: int=0
 
     # Capacity.
-    fmap_base: int=16384                # Overall multiplier for the number of feature maps.
-    fmap_decay: int=1                   # Log2 feature map reduction when doubling the resolution.
-    fmap_min: int=1                     # Minimum number of feature maps in any layer.
-    fmap_max: int=512                   # Maximum number of feature maps in any layer.
+    fmap_base: int=16384
+    fmap_decay: int=1
+    fmap_min: int=1
+    fmap_max: int=512
 
     # Internal details.
-    mapping_layers: int=0               # Number of additional mapping layers for the conditioning labels.
-    mapping_fmaps: int=None             # Number of activations in the mapping layers, None = default.
-    mapping_lr_multiplier: float=0.1    # Learning rate multiplier for the mapping layers.
-    architecture: str='resnet'          # Architecture: 'orig', 'resnet'.
-    activation: str='leaky_relu'        # Activation function: 'relu', 'leaky_relu', etc.
-    mbstd_group_size: int=None          # Group size for the minibatch standard deviation layer, None = entire minibatch.
-    mbstd_num_features: int=1           # Number of features for the minibatch standard deviation layer, 0 = disable.
-    resample_kernel: Tuple=(1, 3, 3, 1) # Low-pass filter to apply when resampling activations, None = box filter.
+    mapping_layers: int=0
+    mapping_fmaps: int=None
+    mapping_lr_multiplier: float=0.1
+    architecture: str='resnet'
+    activation: str='leaky_relu'
+    mbstd_group_size: int=None
+    mbstd_num_features: int=1
+    resample_kernel: Tuple=(1, 3, 3, 1)
 
     # Pretraining
-    pretrained: str=None                # Use pretrained model, None for random initialization.
-    ckpt_dir: str=None                  # Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
+    pretrained: str=None
+    ckpt_dir: str=None
 
-    dtype: str='float32'                # Data type.
-    rng: Any=random.PRNGKey(0)          # Random seed.
+    dtype: str='float32'
+    rng: Any=random.PRNGKey(0)
 
     def setup(self):
         self.resolution_ = self.resolution
@@ -248,6 +365,16 @@ class Discriminator(nn.Module):
 
     @nn.compact
     def __call__(self, x, c=None):
+        """
+        Run Discriminator.
+
+        Args:
+            x (tensor): Input image of shape [N, H, W, num_channels].
+            c (tensor): Input labels, shape [N, c_dim].
+        
+        Returns:
+            (tensor): Output tensor of shape [N, 1].
+        """
         resolution_log2 = int(np.log2(self.resolution_))
         assert self.resolution_ == 2**resolution_log2 and self.resolution_ >= 4
         def nf(stage): return np.clip(int(self.fmap_base / (2.0 ** (stage * self.fmap_decay))), self.fmap_min, self.fmap_max)
@@ -282,7 +409,6 @@ class Discriminator(nn.Module):
             res_str = f'block_{2**res}x{2**res}'
             if res == resolution_log2:
                 x = FromRGBLayer(fmaps=nf(res - 1),
-                                 res=res,
                                  kernel=1,
                                  activation=self.activation,
                                  param_dict=self.param_dict[res_str] if self.param_dict is not None else None,

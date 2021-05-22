@@ -12,6 +12,38 @@ URLS = {'vgg16': 'https://www.dropbox.com/s/ew3vhtlg5kks8mz/vgg16_weights.h5?dl=
 
 
 class VGG(nn.Module):
+    """
+    VGG.
+
+    Attributes:
+        output (str):
+            Output of the module. Available options are:
+                - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'logits': Output is a tensor of shape [N, 1000]
+                - 'activations': Output is a dictionary containing the VGG activations
+        pretrained (str):
+            Indicates if and what type of weights to load. Options are:
+                - 'imagenet': Loads the network parameters trained on ImageNet
+                - None: Parameters of the module are initialized randomly
+        architecture (str):
+            Architecture type:
+                - 'vgg16'
+                - 'vgg19'
+        include_head (bool):
+            If True, include the three fully-connected layers at the top of the network.
+            This option is useful when you want to obtain activations for images whose
+            size is different than 224x224.
+        kernel_init (function):
+            A function that takes in a shape and returns a tensor.
+        bias_init (function):
+            A function that takes in a shape and returns a tensor.
+        ckpt_dir (str):
+            The directory to which the pretrained weights are downloaded.
+            Only relevant if a pretrained model is used. 
+            If this argument is None, the weights will be saved to a temp directory.
+        rng (jax.numpy.ndarray): 
+            Random seed.
+    """
     output: str='softmax'
     pretrained: str='imagenet'
     architecture: str='vgg16'
@@ -34,6 +66,12 @@ class VGG(nn.Module):
             x (tensor of shape [N, H, W, 3]):
                 Batch of input images (RGB format). Images must be in range [0, 1].
                 If 'include_head' is True, the images must be 224x224.
+
+        Returns:
+            If output == 'logits' or output == 'softmax':
+                (tensor): Output tensor of shape [N, num_classes].
+            If output == 'activations':
+                (dict): Dictionary of activations.
         """
         if self.output not in ['softmax', 'logits', 'activations']:
             raise ValueError('Wrong argument. Possible choices for output are "softmax", "logits", and "activations".')

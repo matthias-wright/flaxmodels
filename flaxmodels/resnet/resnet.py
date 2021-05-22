@@ -21,19 +21,43 @@ LAYERS = {'resnet18': [2, 2, 2, 2],
 
 
 class BasicBlock(nn.Module):
+    """
+    Basic Block.
+
+    Attributes:
+        features (int): Number of output channels.
+        kernel_size (Tuple): Kernel size.
+        downsample (bool): If True, downsample spatial resolution.
+        stride (bool): If True, use strides (2, 2). Not used in this module.
+                       The attribute is only here for compatibility with Bottleneck.
+        train (bool): If True, use training mode.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        kernel_init (functools.partial): Kernel initializer.
+        bias_init (functools.partial): Bias initializer.
+        block_name (str): Name of block.
+    """
     features: int
     kernel_size: Union[int, Iterable[int]] = (3, 3)
     downsample: bool = False
     stride: bool = True
     train: bool = False
-    param_dict: Any = None
+    param_dict: h5py.Group = None
     kernel_init: functools.partial = nn.initializers.lecun_normal()
     bias_init: functools.partial = nn.initializers.zeros
     block_name: str = None
 
     @nn.compact
     def __call__(self, x, act):
+        """
+        Run Basic Block.
 
+        Args:
+            x (tensor): Input tensor of shape [N, H, W, C].
+            act (dict): Dictionary containing activations.
+
+        Returns:
+            (tensor): Output shape of shape [N, H', W', features].
+        """
         residual = x 
         
         x = nn.Conv(features=self.features, 
@@ -71,6 +95,22 @@ class BasicBlock(nn.Module):
 
 
 class Bottleneck(nn.Module):
+    """
+    Bottleneck.
+
+    Attributes:
+        features (int): Number of output channels.
+        kernel_size (Tuple): Kernel size.
+        downsample (bool): If True, downsample spatial resolution.
+        stride (bool): If True, use strides (2, 2). Not used in this module.
+                       The attribute is only here for compatibility with Bottleneck.
+        train (bool): If True, use training mode.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        kernel_init (functools.partial): Kernel initializer.
+        bias_init (functools.partial): Bias initializer.
+        block_name (str): Name of block.
+        expansion (int): Factor to multiply number of output channels with.
+    """
     features: int
     kernel_size: Union[int, Iterable[int]] = (3, 3)
     downsample: bool = False
@@ -84,7 +124,16 @@ class Bottleneck(nn.Module):
 
     @nn.compact
     def __call__(self, x, act):
+        """
+        Run Bottleneck.
 
+        Args:
+            x (tensor): Input tensor of shape [N, H, W, C].
+            act (dict): Dictionary containing activations.
+
+        Returns:
+            (tensor): Output shape of shape [N, H', W', features].
+        """
         residual = x 
         
         x = nn.Conv(features=self.features, 
@@ -130,6 +179,39 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
+    """
+    ResNet.
+
+    Attributes:
+        output (str):
+            Output of the module. Available options are:
+                - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'logits': Output is a tensor of shape [N, 1000]
+                - 'activations': Output is a dictionary containing the ResNet activations
+        pretrained (str):
+            Indicates if and what type of weights to load. Options are:
+                - 'imagenet': Loads the network parameters trained on ImageNet
+                - None: Parameters of the module are initialized randomly
+        architecture (str): 
+            Which ResNet model to use:
+                - 'resnet18'
+                - 'resnet34'
+                - 'resnet50'
+                - 'resnet101'
+                - 'resnet152'
+        block (nn.Module):
+            Type of residual block:
+                - BasicBlock
+                - Bottleneck
+        kernel_init (function):
+            A function that takes in a shape and returns a tensor.
+        bias_init (function):
+            A function that takes in a shape and returns a tensor.
+        ckpt_dir (str):
+            The directory to which the pretrained weights are downloaded.
+            Only relevant if a pretrained model is used. 
+            If this argument is None, the weights will be saved to a temp directory.
+    """
     output: str='softmax'
     pretrained: str='imagenet'
     architecture: str='resnet18'
@@ -147,8 +229,14 @@ class ResNet(nn.Module):
     def __call__(self, x):
         """
         Args:
-            x (tensor of shape [N, H, W, 3]):
-                Batch of input images (RGB format). Images must be in range [0, 1].
+            x (tensor): Input tensor of shape [N, H, W, 3]. Images must be in range [0, 1].
+
+        Returns:
+            (tensor): Out
+            If output == 'logits' or output == 'softmax':
+                (tensor): Output tensor of shape [N, num_classes].
+            If output == 'activations':
+                (dict): Dictionary of activations.
         """     
         if self.pretrained == 'imagenet':
             # normalize input

@@ -26,7 +26,7 @@ class GPT2SelfAttention(nn.Module):
     Attributes:
         config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
         param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-        rng (Any): Random seed.
+        rng (jax.random.PRNGKey): Random seed.
     """
     config: dict=None
     param_dict: dict=None
@@ -91,7 +91,7 @@ class GPT2MLP(nn.Module):
         intermediate_dim (int): Dimension of the intermediate layer.
         config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
         param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-        rng (Any): Random seed.
+        rng (jax.random.PRNGKey): Random seed.
     """
     intermediate_dim: int
     config: dict=None
@@ -126,7 +126,7 @@ class GPT2Block(nn.Module):
     Attributes:
         config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
         param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-        rng (Any): Random seed.
+        rng (jax.random.PRNGKey): Random seed.
     """
     config: dict=None
     param_dict: dict=None
@@ -176,7 +176,7 @@ class GPT2Model(nn.Module):
         pretrained (str): Which pretrained model to use, None for random initialization.
         ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
         param_dict (dict): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-        rng (Any): Random seed.
+        rng (jax.random.PRNGKey): Random seed.
     """
     config: dict=None
     pretrained: str=None
@@ -292,7 +292,7 @@ class GPT2LMHeadModel(nn.Module):
         config (Any): Configuration object. If 'pretrained' is not None, this parameter will be ignored.
         pretrained (str): Which pretrained model to use, None for random initialization.
         ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
-        rng (Any): Random seed.
+        rng (jax.random.PRNGKey): Random seed.
     """
     config: Any=None
     pretrained: str=None
