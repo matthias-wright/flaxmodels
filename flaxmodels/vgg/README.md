@@ -8,8 +8,6 @@
 * [1. Important Note](#note)
 * [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
-  * [3.1 VGG16](#vgg16)
-  * [3.2 VGG19](#vgg19)
 * [4. License](#license)
 
 

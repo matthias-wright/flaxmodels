@@ -8,10 +8,6 @@
 ##### Table of Contents  
 * [1. Basic Usage](#usage)
 * [2. Documentation](#documentation)
-  * [2.1 Generator](#doc_generator)
-  * [2.2 SynthesisNetwork](#doc_syn)
-  * [2.3 MappingNetwork](#doc_map)
-  * [2.4 Discriminator](#doc_discriminator)
 * [3. Models](#models)
   * [3.1 Metfaces](#metfaces)
   * [3.2 FFHQ](#ffhq)

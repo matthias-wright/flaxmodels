@@ -7,11 +7,6 @@
 * [1. Important Note](#note)
 * [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
-  * [3.1 ResNet18](#resnet18)
-  * [3.2 ResNet34](#resnet34)
-  * [3.3 ResNet50](#resnet50)
-  * [3.4 ResNet101](#resnet101)
-  * [3.5 ResNet152](#resnet152)
 * [4. License](#license)
 
 <a name="note"></a>
