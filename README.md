@@ -31,7 +31,7 @@ You will need Python 3.7 or later.
 For CPU-only you can skip step 1.
 
 ### Documentation
-The documentation for the models is on the individual model pages.
+The documentation for the models can be found [here](docs/Documentation.md#models).
 
 ### Checkpoints
 The checkpoints are taken from the repositories that are referenced on the model pages. The processing steps and the format of the checkpoints are documented [here](docs/Documentation.md#1-checkpoints).

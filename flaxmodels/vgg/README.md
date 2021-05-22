@@ -47,43 +47,7 @@ Usage is equivalent for VGG19.
 
 <a name="documentation"></a>
 ## 3. Documentation
-
-<a name="vgg16"></a>
-### 3.1 VGG16
-flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
-
-#### Parameters
-* **output (str)** - Output of the network. Options:
-   * 'softmax': Output is a softmax tensor of shape [N, 1000].
-   * 'logits': Output is a tensor of shape [N, 1000].
-   * 'activations': Output is a dictionary containing the VGG activations.
-* **pretrained (str)** - Which pretrained weights to load. Options:
-  * 'imagenet': Loads the network parameters trained on ImageNet.
-  * None: Parameters of the module are initialized randomly.
-* **include_head (bool)** - If True, include the three fully-connected layers at the top of the network. This option is useful when you want to obtain activations for images whose size is different than 224x224.
-* **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
-* **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
-* **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
-
-
-<a name="vgg19"></a>
-### 3.2 VGG19
-flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
-
-#### Parameters
-* **output (str)** - Output of the network. Options:
-   * 'softmax': Output is a softmax tensor of shape [N, 1000].
-   * 'logits': Output is a tensor of shape [N, 1000].
-   * 'activations': Output is a dictionary containing the VGG activations.
-* **pretrained (str)** - Which pretrained weights to load. Options:
-  * 'imagenet': Loads the network parameters trained on ImageNet.
-  * None: Parameters of the module are initialized randomly.
-* **include_head (bool)** - If True, include the three fully-connected layers at the top of the network. This option is useful when you want to obtain activations for images whose size is different than 224x224.
-* **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
-* **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
-* **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
+The documentation can be found [here](../../docs/Documentation.md#vgg).
 
 <a name="license"></a>
 ## 4. License

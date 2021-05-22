@@ -7,22 +7,9 @@
 * [2. Testing](#tests)
 * [3. Models](#models)
   * [3.1 GPT2](#gpt2)
-    * [3.1.1 GPT2LMHeadModel](#gpt2_lmhead)
-    * [3.1.2 GPT2Model](#gpt2_model)
   * [3.2 StyleGAN2](#stylegan2)
-    * [3.2.1 Generator](#stylegan2_generator)
-    * [3.2.2 SynthesisNetwork](#stylegan2_syn)
-    * [3.2.3 MappingNetwork](#stylegan2_map)
-    * [3.2.4 Discriminator](#stylegan2_discriminator)
   * [3.3 ResNet{18, 34, 50, 101, 152}](#resnet)
-    * [3.3.1 ResNet18](#resnet18)
-    * [3.3.2 ResNet34](#resnet34)
-    * [3.3.3 ResNet50](#resnet50)
-    * [3.3.4 ResNet101](#resnet101)
-    * [3.3.5 ResNet152](#resnet152)
   * [3.4 VGG{16, 19}](#vgg)
-    * [3.4.1 VGG16](#vgg16)
-    * [3.4.2 VGG19](#vgg19)
 
 
 <a name="ckpts"></a>
@@ -70,9 +57,11 @@ Similar tests are performed for the other models.
 
 <a name="gpt2"></a>
 ### 3.1 GPT2
+* [GPT2LMHeadModel](#gpt2_lmhead)
+* [GPT2Model](#gpt2_model)
 
 <a name="gpt2_lmhead"></a>
-#### 3.1.1 GPT2LMHeadModel
+### GPT2LMHeadModel
 flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rng=jax.random.PRNGKey(0)*)
 
 
@@ -102,7 +91,7 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **training (bool)** - If True, training mode on.
 
 <a name="gpt2_model"></a>
-#### 3.1.2 GPT2Model
+### GPT2Model
 flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None, rng=jax.random.PRNGKey(0)*)
 
 #### Attributes
@@ -133,9 +122,13 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 
 <a name="stylegan2"></a>
 ### 3.2 StyleGAN2
+* [Generator](#stylegan2_generator)
+* [SynthesisNetwork](#stylegan2_syn)
+* [MappingNetwork](#stylegan2_map)
+* [Discriminator](#stylegan2_discriminator)
 
 <a name="stylegan2_generator"></a>
-#### 3.2.1 Generator
+### Generator
 
 flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_dim=0, w_dim=512, mapping_layer_features=512, mapping_embed_features=None, num_ws=18, num_mapping_layers=8, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, ckpt_dir=None, use_noise=True, randomize_noise=True, activation='leaky_relu', w_avg_beta=0.995, mapping_lr_multiplier=0.01, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
@@ -193,7 +186,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 
 
 <a name="stylegan2_syn"></a>
-#### 3.2.2 SynthesisNetwork
+### SynthesisNetwork
 
 flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', use_noise=True, randomize_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
@@ -239,7 +232,7 @@ apply(*dlatents_in*)
 
 
 <a name="stylegan2_map"></a>
-#### 3.2.3 MappingNetwork
+### MappingNetwork
 flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Attributes
@@ -285,7 +278,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 
 
 <a name="stylegan2_discriminator"></a>
-#### 3.2.4 Discriminator
+### Discriminator
 flaxmodels.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], pretrained=None, ckpt_dir=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Attributes
@@ -335,10 +328,15 @@ apply(*z, c=None*)
 
 <a name="resnet"></a>
 ### 3.3 ResNet{18, 34, 50, 101, 152}
+* [ResNet18](#resnet18)
+* [ResNet34](#resnet34)
+* [ResNet50](#resnet50)
+* [ResNet101](#resnet101)
+* [ResNet152](#resnet152)
 
 
 <a name="resnet18"></a>
-#### 3.3.1 ResNet18
+### ResNet18
 flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
@@ -355,7 +353,7 @@ flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.l
 
 
 <a name="resnet34"></a>
-#### 3.3.2 ResNet34
+### ResNet34
 flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
@@ -371,7 +369,7 @@ flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True,
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 
 <a name="resnet50"></a>
-#### 3.3.3 ResNet50
+### ResNet50
 flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
@@ -388,7 +386,7 @@ flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True,
 
 
 <a name="resnet101"></a>
-#### 3.3.4 ResNet101
+### ResNet101
 flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
 
 #### Parameters
@@ -405,7 +403,7 @@ flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True
 
 
 <a name="resnet152"></a>
-#### 3.3.5 ResNet152
+### ResNet152
 flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None>*) -> flax.linen.Module
 
 #### Parameters
@@ -423,9 +421,11 @@ flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True
 
 <a name="vgg"></a>
 ### 3.4 VGG{16, 19}
+* [VGG16](#vgg16)
+* [VGG19](#vgg19)
 
 <a name="vgg16"></a>
-#### 3.4.1 VGG16
+### VGG16
 flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
 
 #### Parameters
@@ -444,7 +444,7 @@ flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, ke
 
 
 <a name="vgg19"></a>
-#### 3.4.2 VGG19
+### VGG19
 flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
 
 #### Parameters
@@ -460,4 +460,5 @@ flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **rng (jax.numpy.ndarray)** - Random seed.
+
 

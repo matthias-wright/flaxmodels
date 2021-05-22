@@ -9,8 +9,6 @@
 * [1. Models](#models)
 * [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
-  * [3.1 GPT2LMHeadModel](#doc_lmhead)
-  * [3.2 GPT2Model](#doc_model)
 * [4. Acknowledgments](#ack)
 * [5. License](#license)
 
@@ -69,66 +67,7 @@ print(sequence)
 
 <a name="documentation"></a>
 ## 3. Documentation
-
-<a name="doc_lmhead"></a>
-### 3.1 GPT2LMHeadModel
-flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rng=jax.random.PRNGKey(0)*)
-
-
-#### Parameters
-* **config (types.SimpleNamespace)** - Configuration file.
-* **pretrained (str)** - Which pretrained model to use, None for random initialization. Options:
-  * 'gpt2'
-  * 'gpt2-medium'
-  * 'gpt2-large'
-  * 'gpt2-xl'
-* **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
-
-#### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
-
-
-##### Parameters
-* **input_ids (jax.numpy.ndarray)** - Input token ids, shape [B, seq_len].
-* **past_key_values (Tuple of Tuples)** - Precomputed hidden keys and values.
-* **input_embds (jax.numpy.ndarray)** - Input embeddings, shape [B, seq_len, embd_dim].
-* **labels (jax.numpy.ndarray)** - Labels for language modeling, shape [B, seq_len]. Will be shifted inside the model. Ignore label = -100.
-* **position_ids (bool)** - Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
-* **attn_mask (jax.numpy.ndarray)** - Mask to avoid performing attention on padding token indices, shape [B, seq_len].
-* **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
-* **use_cache (bool)** - If True, keys and values are returned (past_key_values).
-* **training (bool)** - If True, training mode on.
-
-<a name="doc_model"></a>
-### 3.2 GPT2Model
-
-flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None, rng=jax.random.PRNGKey(0)*)
-
-#### Parameters
-* **config (types.SimpleNamespace)** - Configuration file.
-* **pretrained (str)** - Which pretrained model to use, None for random initialization. Options:
-  * 'gpt2'
-  * 'gpt2-medium'
-  * 'gpt2-large'
-  * 'gpt2-xl'
-* **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **param_dict (dict)** - Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-* **rng (jax.numpy.ndarray)** - Random seed.
-
-#### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
-
-##### Parameters
-* **input_ids (jax.numpy.ndarray)** - Input token ids, shape [B, seq_len].
-* **past_key_values (Tuple of Tuples)** - Precomputed hidden keys and values.
-* **input_embds (jax.numpy.ndarray)** - Input embeddings, shape [B, seq_len, embd_dim].
-* **labels (jax.numpy.ndarray)** - Labels for language modeling, shape [B, seq_len]. Will be shifted inside the model. Ignore label = -100.
-* **position_ids (bool)** - Indices of positions of each input sequence tokens in the position embeddings, shape [B, seq_len].
-* **attn_mask (jax.numpy.ndarray)** - Mask to avoid performing attention on padding token indices, shape [B, seq_len].
-* **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
-* **use_cache (bool)** - If True, keys and values are returned (past_key_values).
-* **training (bool)** - If True, training mode on.
+The documentation can be found [here](../../docs/Documentation.md#gpt2).
 
 <a name="ack"></a>
 ### 4. Acknowledgments
