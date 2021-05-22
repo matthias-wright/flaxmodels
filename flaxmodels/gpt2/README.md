@@ -70,7 +70,7 @@ print(sequence)
 The documentation can be found [here](../../docs/Documentation.md#gpt2).
 
 <a name="ack"></a>
-### 4. Acknowledgments
+## 4. Acknowledgments
 The tokenizer is taken from <a href="https://huggingface.co/transformers/model_doc/gpt2.html#gpt2tokenizer">Huggingface</a>.
 
 <a name="license"></a>

@@ -54,6 +54,10 @@ Similar tests are performed for the other models.
 
 <a name="models"></a>
 ## 3. Models
+* [3.1 GPT2](#gpt2)
+* [3.2 StyleGAN2](#stylegan2)
+* [3.3 ResNet{18, 34, 50, 101, 152}](#resnet)
+* [3.4 VGG{16, 19}](#vgg)
 
 <a name="gpt2"></a>
 ### 3.1 GPT2
