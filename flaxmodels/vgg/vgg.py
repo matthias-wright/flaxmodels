@@ -33,6 +33,8 @@ class VGG(nn.Module):
             If True, include the three fully-connected layers at the top of the network.
             This option is useful when you want to obtain activations for images whose
             size is different than 224x224.
+        num_classes (int):
+            Number of classes. Only relevant if 'include_head' is True.
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -48,6 +50,7 @@ class VGG(nn.Module):
     pretrained: str='imagenet'
     architecture: str='vgg16'
     include_head: bool=True
+    num_classes: int=1000
     kernel_init: functools.partial=nn.initializers.lecun_normal()
     bias_init: functools.partial=nn.initializers.zeros
     ckpt_dir: str=None
@@ -88,6 +91,10 @@ class VGG(nn.Module):
             std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1)
             x = (x - mean) / std
 
+            num_classes = 1000
+        else:
+            num_classes = self.num_classes
+
         act = {}
 
         x = self._conv_block(x, features=64, num_layers=2, block_num=1, act=act)
@@ -112,7 +119,7 @@ class VGG(nn.Module):
             x = jnp.reshape(x, (-1, x.shape[1] * x.shape[2] * x.shape[3]))
             x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act)
             x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act)
-            x = self._fc_block(x, features=1000, block_num=8, relu=False, dropout=False, act=act)
+            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act)
 
         if self.output == 'activations':
             return act 
@@ -148,6 +155,7 @@ class VGG(nn.Module):
 def VGG16(output='softmax',
           pretrained='imagenet',
           include_head=True,
+          num_classes=1000,
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
@@ -173,6 +181,8 @@ def VGG16(output='softmax',
             If True, include the three fully-connected layers at the top of the network.
             This option is useful when you want to obtain activations for images whose
             size is different than 224x224.
+        num_classes (int):
+            Number of classes. Only relevant if 'include_head' is True.
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -191,6 +201,7 @@ def VGG16(output='softmax',
                pretrained=pretrained,
                architecture='vgg16',
                include_head=include_head,
+               num_classes=num_classes,
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
@@ -200,6 +211,7 @@ def VGG16(output='softmax',
 def VGG19(output='softmax',
           pretrained='imagenet',
           include_head=True,
+          num_classes=1000,
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
@@ -225,6 +237,8 @@ def VGG19(output='softmax',
             If True, include the three fully-connected layers at the top of the network.
             This option is useful when you want to obtain activations for images whose
             size is different than 224x224.
+        num_classes (int):
+            Number of classes. Only relevant if 'include_head' is True.
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -243,6 +257,7 @@ def VGG19(output='softmax',
                pretrained=pretrained,
                architecture='vgg19',
                include_head=include_head,
+               num_classes=num_classes,
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
