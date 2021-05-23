@@ -1,4 +1,4 @@
-<div align="center"><img src="docs/img/flax.png" alt="flax" width="200" height="200"></div>
+<div align="center"><img src="https://raw.githubusercontent.com/matthias-wright/flaxmodels/main/docs/img/flax.png" alt="flax" width="200" height="200"></div>
 <div align="center"><h3>Flax Models</h3></div>
 <div align="center">A collection of pretrained models in <a href="https://github.com/google/flax">Flax</a>.</div>
 
