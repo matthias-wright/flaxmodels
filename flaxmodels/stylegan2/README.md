@@ -25,7 +25,7 @@
 
 <a name="usage"></a>
 ## 1. Basic Usage
-For more usage examples check out this [Colab](https://colab.research.google.com/drive/1klNP4LbrXK5P3KwFM9_PqCVx5MwwilCI?usp=sharing).
+For more usage examples check out this [Colab](stylegan2_demo.ipynb).
 
 ```python
 import numpy as np

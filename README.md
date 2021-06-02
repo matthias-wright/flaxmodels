@@ -15,10 +15,10 @@ The goal of this project is to make current deep learning models more easily ava
 * [VGG{16, 19}](flaxmodels/vgg)  
 
 ### Example Notebooks to play with on Colab
-* <a href="https://colab.research.google.com/drive/1j58Bnt1n-k4UJRQI9jnJAJIxME8ZDZjj?usp=sharing">GPT2</a>
-* <a href="https://colab.research.google.com/drive/1klNP4LbrXK5P3KwFM9_PqCVx5MwwilCI?usp=sharing">StyleGAN2</a>
-* <a href="https://colab.research.google.com/drive/1hjOV3_3OT5xz0iaj4fdCJurL7XWBJUWc?usp=sharing">ResNet</a>
-* <a href="https://colab.research.google.com/drive/1wIzRnxlxJmrZNsUthtjKWPKULKzvacPD?usp=sharing">VGG</a>
+* [GPT2](flaxmodels/gpt2/gpt2_demo.ipynb)
+* [StyleGAN2](flaxmodels/stylegan2/stylegan2_demo.ipynb)
+* [ResNet](flaxmodels/resnet/resnet_demo.ipynb)
+* [VGG](flaxmodels/vgg/vgg_demo.ipynb)
 
 ### Installation
 You will need Python 3.7 or later.

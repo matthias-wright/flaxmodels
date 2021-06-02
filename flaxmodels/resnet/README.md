@@ -15,7 +15,7 @@ Images must be in range [0, 1]. If the pretrained ImageNet weights are selected,
 
 <a name="usage"></a>
 ## 2. Basic Usage
-For more usage examples check out this [Colab](https://colab.research.google.com/drive/1hjOV3_3OT5xz0iaj4fdCJurL7XWBJUWc?usp=sharing).
+For more usage examples check out this [Colab](resnet_demo.ipynb).
 
 ```python
 from PIL import Image
