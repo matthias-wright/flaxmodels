@@ -38,6 +38,9 @@ def _absolute_dims(rank, dims):
 
 class BatchNorm(nn.Module):
     """BatchNorm Module.
+
+    Taken from: https://github.com/google/flax/blob/master/flax/linen/normalization.py
+
     Attributes:
         use_running_average: if True, the statistics stored in batch_stats
                              will be used instead of computing the batch statistics on the input.
@@ -77,8 +80,6 @@ class BatchNorm(nn.Module):
     def __call__(self, x, use_running_average: Optional[bool] = None):
         """Normalizes the input using batch statistics.
         
-        Taken from: https://github.com/google/flax/blob/master/flax/linen/normalization.py
-
         NOTE:
         During initialization (when parameters are mutable) the running average
         of the batch statistics will not be updated. Therefore, the inputs

@@ -31,7 +31,6 @@ class BasicBlock(nn.Module):
         downsample (bool): If True, downsample spatial resolution.
         stride (bool): If True, use strides (2, 2). Not used in this module.
                        The attribute is only here for compatibility with Bottleneck.
-        train (bool): If True, use training mode.
         param_dict (h5py.Group): Parameter dict with pretrained parameters.
         kernel_init (functools.partial): Kernel initializer.
         bias_init (functools.partial): Bias initializer.
@@ -41,20 +40,20 @@ class BasicBlock(nn.Module):
     kernel_size: Union[int, Iterable[int]] = (3, 3)
     downsample: bool = False
     stride: bool = True
-    train: bool = False
     param_dict: h5py.Group = None
     kernel_init: functools.partial = nn.initializers.lecun_normal()
     bias_init: functools.partial = nn.initializers.zeros
     block_name: str = None
 
     @nn.compact
-    def __call__(self, x, act):
+    def __call__(self, x, act, train=True):
         """
         Run Basic Block.
 
         Args:
             x (tensor): Input tensor of shape [N, H, W, C].
             act (dict): Dictionary containing activations.
+            train (bool): Training mode.
 
         Returns:
             (tensor): Output shape of shape [N, H', W', features].
@@ -68,7 +67,7 @@ class BasicBlock(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -78,7 +77,7 @@ class BasicBlock(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features, 
@@ -88,7 +87,7 @@ class BasicBlock(nn.Module):
                                use_bias=False)(residual)
 
             residual = ops.batch_norm(residual,
-                                      train=self.train,
+                                      train=train,
                                       epsilon=1e-05,
                                       momentum=0.1,
                                       params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
@@ -109,7 +108,6 @@ class Bottleneck(nn.Module):
         downsample (bool): If True, downsample spatial resolution.
         stride (bool): If True, use strides (2, 2). Not used in this module.
                        The attribute is only here for compatibility with Bottleneck.
-        train (bool): If True, use training mode.
         param_dict (h5py.Group): Parameter dict with pretrained parameters.
         kernel_init (functools.partial): Kernel initializer.
         bias_init (functools.partial): Bias initializer.
@@ -120,7 +118,6 @@ class Bottleneck(nn.Module):
     kernel_size: Union[int, Iterable[int]] = (3, 3)
     downsample: bool = False
     stride: bool = True
-    train: bool = False
     param_dict: Any = None
     kernel_init: functools.partial = nn.initializers.lecun_normal()
     bias_init: functools.partial = nn.initializers.zeros
@@ -128,13 +125,14 @@ class Bottleneck(nn.Module):
     expansion: int = 4
 
     @nn.compact
-    def __call__(self, x, act):
+    def __call__(self, x, act, train=True):
         """
         Run Bottleneck.
 
         Args:
             x (tensor): Input tensor of shape [N, H, W, C].
             act (dict): Dictionary containing activations.
+            train (bool): Training mode.
 
         Returns:
             (tensor): Output shape of shape [N, H', W', features].
@@ -147,7 +145,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -157,7 +155,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
                     use_bias=False)(x)
         
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features * self.expansion, 
@@ -166,7 +164,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv3']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn3']) 
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn3']) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features * self.expansion, 
@@ -176,7 +174,7 @@ class Bottleneck(nn.Module):
                                use_bias=False)(residual)
 
             residual = ops.batch_norm(residual,
-                                      train=self.train,
+                                      train=train,
                                       epsilon=1e-05,
                                       momentum=0.1,
                                       params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
@@ -284,22 +282,22 @@ class ResNet(nn.Module):
         down = self.block.__name__ == 'Bottleneck'
         for i in range(LAYERS[self.architecture][0]):
             params = None if self.param_dict is None else self.param_dict['layer1'][f'block{i}']
-            x = self.block(features=64, kernel_size=(3, 3), downsample=i == 0 and down, stride=i != 0, train=train, param_dict=params, block_name=f'block1_{i}')(x, act)
+            x = self.block(features=64, kernel_size=(3, 3), downsample=i == 0 and down, stride=i != 0, param_dict=params, block_name=f'block1_{i}')(x, act, train)
         
         # Layer 2
         for i in range(LAYERS[self.architecture][1]):
             params = None if self.param_dict is None else self.param_dict['layer2'][f'block{i}']
-            x = self.block(features=128, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block2_{i}')(x, act)
+            x = self.block(features=128, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block2_{i}')(x, act, train)
         
         # Layer 3
         for i in range(LAYERS[self.architecture][2]):
             params = None if self.param_dict is None else self.param_dict['layer3'][f'block{i}']
-            x = self.block(features=256, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block3_{i}')(x, act)
+            x = self.block(features=256, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block3_{i}')(x, act, train)
 
         # Layer 4
         for i in range(LAYERS[self.architecture][3]):
             params = None if self.param_dict is None else self.param_dict['layer4'][f'block{i}']
-            x = self.block(features=512, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block4_{i}')(x, act)
+            x = self.block(features=512, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block4_{i}')(x, act, train)
 
         # Classifier
         x = jnp.mean(x, axis=(1, 2))
