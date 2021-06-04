@@ -12,7 +12,7 @@ def test_output_softmax():
 
     resnet50 = fm.ResNet50(output='softmax', pretrained=None)
     params = resnet50.init(key, x)
-    out, _ = resnet50.apply(params, x, mutable=['batch_stats'])
+    out = resnet50.apply(params, x, train=False)
 
     assert jnp.min(out) >= 0.0 and jnp.max(out) <= 1.0
 
@@ -24,7 +24,7 @@ def test_output_activations():
 
     resnet50 = fm.ResNet50(output='activations', pretrained=None)
     params = resnet50.init(key, x)
-    out, _ = resnet50.apply(params, x, mutable=['batch_stats'])
+    out = resnet50.apply(params, x, train=False)
 
     assert isinstance(out, dict)
 
@@ -38,7 +38,7 @@ def test_reference_output():
 
     resnet50 = fm.ResNet50(output='logits', pretrained='imagenet')
     params = resnet50.init(key, x)
-    out = resnet50.apply(params, x)
+    out = resnet50.apply(params, x, train=False)
     
     out_ref = jnp.load('tests/resnet/aux_files/resnet50_elefant_output_ref.npy')
     diff = jnp.mean(jnp.abs(out - out_ref))

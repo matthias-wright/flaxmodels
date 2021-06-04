@@ -3,6 +3,7 @@ import flax.linen as nn
 import functools
 from typing import (Any, Callable, Iterable, Optional, Tuple, Union)
 import h5py
+import warnings
 from . import ops
 from .. import utils
 
@@ -67,7 +68,7 @@ class BasicBlock(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['bn1']) 
+        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -77,7 +78,7 @@ class BasicBlock(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['bn2']) 
+        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features, 
@@ -86,7 +87,11 @@ class BasicBlock(nn.Module):
                                kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['downsample']['conv']['weight']), 
                                use_bias=False)(residual)
 
-            residual = ops.batch_norm(residual, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['downsample']['bn']) 
+            residual = ops.batch_norm(residual,
+                                      train=self.train,
+                                      epsilon=1e-05,
+                                      momentum=0.1,
+                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
         
         x += residual
         x = nn.relu(x)
@@ -142,7 +147,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['bn1']) 
+        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -152,7 +157,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
                     use_bias=False)(x)
         
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['bn2']) 
+        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features * self.expansion, 
@@ -161,7 +166,7 @@ class Bottleneck(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv3']['weight']), 
                     use_bias=False)(x)
 
-        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['bn3']) 
+        x = ops.batch_norm(x, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn3']) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features * self.expansion, 
@@ -170,7 +175,11 @@ class Bottleneck(nn.Module):
                                kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['downsample']['conv']['weight']), 
                                use_bias=False)(residual)
 
-            residual = ops.batch_norm(residual, train=self.train, epsilon=1e-05, momentum=0.1, params=None if self.train else self.param_dict['downsample']['bn']) 
+            residual = ops.batch_norm(residual,
+                                      train=self.train,
+                                      epsilon=1e-05,
+                                      momentum=0.1,
+                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
         
         x += residual
         x = nn.relu(x)
@@ -186,6 +195,7 @@ class ResNet(nn.Module):
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
@@ -224,15 +234,17 @@ class ResNet(nn.Module):
     ckpt_dir: str=None
 
     def setup(self):
+        self.param_dict = None
         if self.pretrained == 'imagenet':
             ckpt_file = utils.download(self.ckpt_dir, URLS[self.architecture])
             self.param_dict = h5py.File(ckpt_file, 'r')
 
     @nn.compact
-    def __call__(self, x):
+    def __call__(self, x, train=True):
         """
         Args:
             x (tensor): Input tensor of shape [N, H, W, 3]. Images must be in range [0, 1].
+            train (bool): Training mode.
 
         Returns:
             (tensor): Out
@@ -246,59 +258,62 @@ class ResNet(nn.Module):
             mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1)
             std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1)
             x = (x - mean) / std
-
+            
+            if self.num_classes != 1000:
+                warnings.warn(f'The user specified parameter \'num_classes\' was set to {self.num_classes} '
+                                'but will be overwritten with 1000 to match the specified pretrained checkpoint \'imagenet\', if ', UserWarning)
             num_classes = 1000
         else:
             num_classes = self.num_classes
  
         act = {}
 
-        train = self.pretrained is None
-
         x = nn.Conv(features=64, 
                     kernel_size=(7, 7),
-                    kernel_init=self.kernel_init if train else lambda *_ : jnp.array(self.param_dict['conv1']['weight']),
+                    kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']),
                     strides=(2, 2), 
                     padding=((3, 3), (3, 3)),
                     use_bias=False)(x)
         act['conv1'] = x
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if train else self.param_dict['bn1'])
+        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1'])
         x = nn.relu(x)
         x = nn.max_pool(x, window_shape=(3, 3), strides=(2, 2), padding=((1, 1), (1, 1)))
 
         # Layer 1
         down = self.block.__name__ == 'Bottleneck'
         for i in range(LAYERS[self.architecture][0]):
-            params = None if train else self.param_dict['layer1'][f'block{i}']
+            params = None if self.param_dict is None else self.param_dict['layer1'][f'block{i}']
             x = self.block(features=64, kernel_size=(3, 3), downsample=i == 0 and down, stride=i != 0, train=train, param_dict=params, block_name=f'block1_{i}')(x, act)
         
         # Layer 2
         for i in range(LAYERS[self.architecture][1]):
-            params = None if train else self.param_dict['layer2'][f'block{i}']
+            params = None if self.param_dict is None else self.param_dict['layer2'][f'block{i}']
             x = self.block(features=128, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block2_{i}')(x, act)
         
         # Layer 3
         for i in range(LAYERS[self.architecture][2]):
-            params = None if train else self.param_dict['layer3'][f'block{i}']
+            params = None if self.param_dict is None else self.param_dict['layer3'][f'block{i}']
             x = self.block(features=256, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block3_{i}')(x, act)
 
         # Layer 4
         for i in range(LAYERS[self.architecture][3]):
-            params = None if train else self.param_dict['layer4'][f'block{i}']
+            params = None if self.param_dict is None else self.param_dict['layer4'][f'block{i}']
             x = self.block(features=512, kernel_size=(3, 3), downsample=i == 0, train=train, param_dict=params, block_name=f'block4_{i}')(x, act)
 
         # Classifier
         x = jnp.mean(x, axis=(1, 2))
         x = nn.Dense(features=num_classes,
-                     kernel_init=self.kernel_init if train else lambda *_ : jnp.array(self.param_dict['fc']['weight']), 
-                     bias_init=self.bias_init if train else lambda *_ : jnp.array(self.param_dict['fc']['bias']))(x)
+                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['fc']['weight']), 
+                     bias_init=self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['fc']['bias']))(x)
         act['fc'] = x
         
         if self.output == 'softmax':
             return nn.softmax(x)
+        if self.output == 'log_softmax':
+            return nn.log_softmax(x)
         if self.output == 'activations':
-            return act 
+            return act
         return x
 
 
@@ -319,6 +334,7 @@ def ResNet18(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
@@ -366,6 +382,7 @@ def ResNet34(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
@@ -413,6 +430,7 @@ def ResNet50(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
@@ -460,6 +478,7 @@ def ResNet101(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
@@ -507,6 +526,7 @@ def ResNet152(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the ResNet activations
         pretrained (str):
