@@ -4,6 +4,7 @@ import flax.linen as nn
 import functools
 from typing import Any
 import h5py
+import warnings
 from .. import utils
 
 
@@ -19,6 +20,7 @@ class VGG(nn.Module):
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the VGG activations
         pretrained (str):
@@ -57,18 +59,19 @@ class VGG(nn.Module):
     rng: Any=random.PRNGKey(0)
 
     def setup(self):
+        self.param_dict = None
         if self.pretrained == 'imagenet':
             ckpt_file = utils.download(self.ckpt_dir, URLS[self.architecture])
             self.param_dict = h5py.File(ckpt_file, 'r')
-        self.training = self.pretrained is None
 
     @nn.compact
-    def __call__(self, x):
+    def __call__(self, x, train=True):
         """
         Args:
             x (tensor of shape [N, H, W, 3]):
                 Batch of input images (RGB format). Images must be in range [0, 1].
                 If 'include_head' is True, the images must be 224x224.
+            train (bool): Training mode.
 
         Returns:
             If output == 'logits' or output == 'softmax':
@@ -76,7 +79,7 @@ class VGG(nn.Module):
             If output == 'activations':
                 (dict): Dictionary of activations.
         """
-        if self.output not in ['softmax', 'logits', 'activations']:
+        if self.output not in ['softmax', 'log_softmax', 'logits', 'activations']:
             raise ValueError('Wrong argument. Possible choices for output are "softmax", "logits", and "activations".')
 
         if self.pretrained is not None and self.pretrained != 'imagenet':
@@ -90,6 +93,10 @@ class VGG(nn.Module):
             mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1)
             std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1)
             x = (x - mean) / std
+            
+            if self.num_classes != 1000:
+                warnings.warn(f'The user specified parameter \'num_classes\' was set to {self.num_classes} '
+                                'but will be overwritten with 1000 to match the specified pretrained checkpoint \'imagenet\', if ', UserWarning)
 
             num_classes = 1000
         else:
@@ -112,43 +119,44 @@ class VGG(nn.Module):
         x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=5, act=act)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
-
         if self.include_head:
             # NCHW format because weights are from pytorch
             x = jnp.transpose(x, axes=(0, 3, 1, 2))
             x = jnp.reshape(x, (-1, x.shape[1] * x.shape[2] * x.shape[3]))
-            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act)
-            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act)
-            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act)
+            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act, train=train)
+            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act, train=train)
+            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act, train=train)
 
         if self.output == 'activations':
             return act 
 
         if self.output == 'softmax' and self.include_head:
             x = nn.softmax(x)
+        if self.output == 'log_softmax' and self.include_head:
+            x = nn.log_softmax(x)
         return x
 
     def _conv_block(self, x, features, num_layers, block_num, act):
         for l in range(num_layers):
             layer_name = f'conv{block_num}_{l + 1}'
-            w = self.kernel_init if self.training else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
-            b = self.bias_init if self.training else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
+            w = self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
+            b = self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
             x = nn.Conv(features=features, kernel_size=(3, 3), kernel_init=w, bias_init=b, padding='same', name=layer_name)(x)
             act[layer_name] = x
             x = nn.relu(x)
             act[f'relu{block_num}_{l + 1}'] = x
         return x
 
-    def _fc_block(self, x, features, block_num, act, relu=False, dropout=False):
+    def _fc_block(self, x, features, block_num, act, relu=False, dropout=False, train=True):
         layer_name = f'fc{block_num}'
-        w = self.kernel_init if self.training else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
-        b = self.bias_init if self.training else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
+        w = self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
+        b = self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
         x = nn.Dense(features=features, kernel_init=w, bias_init=b, name=layer_name)(x)
         act[layer_name] = x
         if relu:
             x = nn.relu(x)
             act[f'relu{block_num}'] = x
-        if dropout: x = nn.Dropout(rate=0.5)(x, deterministic=not self.training, rng=self.rng)
+        if dropout: x = nn.Dropout(rate=0.5)(x, deterministic=not train, rng=self.rng)
         return x  
 
 
@@ -171,6 +179,7 @@ def VGG16(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the VGG activations
         pretrained (str):
@@ -227,6 +236,7 @@ def VGG19(output='softmax',
         output (str):
             Output of the module. Available options are:
                 - 'softmax': Output is a softmax tensor of shape [N, 1000] 
+                - 'log_softmax': Output is a softmax tensor of shape [N, 1000] 
                 - 'logits': Output is a tensor of shape [N, 1000]
                 - 'activations': Output is a dictionary containing the VGG activations
         pretrained (str):

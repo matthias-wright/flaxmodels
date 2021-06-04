@@ -12,7 +12,7 @@ def test_output_softmax():
 
     vgg19 = fm.VGG19(output='softmax', pretrained=None)
     params = vgg19.init(key, x)
-    out = vgg19.apply(params, x)
+    out = vgg19.apply(params, x, train=False)
 
     assert jnp.min(out) >= 0.0 and jnp.max(out) <= 1.0
 
@@ -24,7 +24,7 @@ def test_output_activations():
 
     vgg19 = fm.VGG19(output='activations', pretrained=None)
     params = vgg19.init(key, x)
-    out = vgg19.apply(params, x)
+    out = vgg19.apply(params, x, train=False)
 
     assert isinstance(out, dict) 
 
@@ -36,7 +36,7 @@ def test_include_head_true():
 
     vgg19 = fm.VGG19(include_head=True, pretrained=None)
     params = vgg19.init(key, x)
-    out = vgg19.apply(params, x)
+    out = vgg19.apply(params, x, train=False)
 
     assert hasattr(out, 'shape') and len(out.shape) == 2 and out.shape[0] == 1 and out.shape[1] == 1000
 
@@ -48,7 +48,7 @@ def test_include_head_false():
 
     vgg19 = fm.VGG19(include_head=False, pretrained=None)
     params = vgg19.init(key, x)
-    out = vgg19.apply(params, x)
+    out = vgg19.apply(params, x, train=False)
 
     assert hasattr(out, 'shape') and len(out.shape) == 4 and out.shape[0] == 1 and out.shape[-1] == 512
 
@@ -62,7 +62,7 @@ def test_reference_output():
 
     vgg19 = fm.VGG19(output='logits', pretrained='imagenet')
     params = vgg19.init(key, x)
-    out = vgg19.apply(params, x)
+    out = vgg19.apply(params, x, train=False)
     
     out_ref = jnp.load('tests/vgg/aux_files/vgg19_elefant_output_ref.npy')
     diff = jnp.mean(jnp.abs(out - out_ref))
