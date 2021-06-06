@@ -123,15 +123,13 @@ class MappingNetwork(nn.Module):
         if self.layer_features_ is None:
             self.layer_features_ = self.w_dim
 
-        self.training = self.param_dict_ is None
-
-        if not self.training and 'w_avg' in self.param_dict_:
+        if self.param_dict_ is not None and 'w_avg' in self.param_dict_:
             self.w_avg =  self.variable('moving_stats', 'w_avg', lambda *_ : jnp.array(self.param_dict_['w_avg']), [self.w_dim])
         else:
             self.w_avg = self.variable('moving_stats', 'w_avg', jnp.zeros, [self.w_dim])
        
     @nn.compact
-    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False):
+    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True):
         """
         Run Mapping Network.
 
@@ -141,6 +139,7 @@ class MappingNetwork(nn.Module):
             truncation_psi (float): Controls truncation (trading off variation for quality). If 1, truncation is disabled.
             truncation_cutoff (int): Controls truncation. None = disable.
             skip_w_avg_update (bool): If True, updates the exponential moving average of W.
+            train (bool): Training mode.
 
         Returns:
             (tensor): Intermediate latent W.
@@ -167,8 +166,8 @@ class MappingNetwork(nn.Module):
             x = ops.apply_activation(x, activation=self.activation)
 
         # Update moving average of W.
-        if self.w_avg_beta is not None and self.training and not skip_w_avg_update:
-            self.w_avg = self.w_avg_beta * self.w_avg.value + (1 - self.w_avg_beta) * jnp.mean(x, axis=0)
+        if self.w_avg_beta is not None and train and not skip_w_avg_update:
+            self.w_avg.value = self.w_avg_beta * self.w_avg.value + (1 - self.w_avg_beta) * jnp.mean(x, axis=0)
 
         # Broadcast.
         if self.num_ws is not None:
@@ -591,7 +590,7 @@ class Generator(nn.Module):
             self.param_dict = None
        
     @nn.compact
-    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False):
+    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True):
         """
         Run Generator.
 
@@ -601,6 +600,7 @@ class Generator(nn.Module):
             truncation_psi (float): Controls truncation (trading off variation for quality). If 1, truncation is disabled.
             truncation_cutoff (int): Controls truncation. None = disable.
             skip_w_avg_update (bool): If True, updates the exponential moving average of W.
+            train (bool): Training mode.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -617,7 +617,7 @@ class Generator(nn.Module):
                                      w_avg_beta=self.w_avg_beta,
                                      param_dict=self.param_dict['mapping_network'] if self.param_dict is not None else None,
                                      dtype=self.dtype,
-                                     rng=self.rng)(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update)
+                                     rng=self.rng)(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update, train)
 
         x = SynthesisNetwork(resolution=self.resolution_,
                              num_channels=self.num_channels,

@@ -12,7 +12,7 @@ def test_reference_output_afhqcat():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='afhqcat', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -26,7 +26,7 @@ def test_reference_output_afhqdog():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='afhqdog', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -40,7 +40,7 @@ def test_reference_output_afhqwild():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='afhqwild', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -54,7 +54,7 @@ def test_reference_output_brecahad():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='brecahad', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -68,7 +68,7 @@ def test_reference_output_car():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='car', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -82,7 +82,7 @@ def test_reference_output_cat():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='cat', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -96,7 +96,7 @@ def test_reference_output_church():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='church', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -111,7 +111,7 @@ def test_reference_output_cifar10():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='cifar10', randomize_noise=False)
     params = generator.init(key, z, label)
-    out = generator.apply(params, z, label)
+    out = generator.apply(params, z, label, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -125,7 +125,7 @@ def test_reference_output_ffhq():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='ffhq', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -139,7 +139,7 @@ def test_reference_output_horse():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='horse', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
@@ -153,7 +153,7 @@ def test_reference_output_metfaces():
     key = jax.random.PRNGKey(0)
     generator = fm.stylegan2.Generator(pretrained='metfaces', randomize_noise=False)
     params = generator.init(key, z)
-    out = generator.apply(params, z)
+    out = generator.apply(params, z, train=False)
 
     diff = jnp.mean(jnp.abs(out - out_ref))
     
