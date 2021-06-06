@@ -42,7 +42,7 @@ z = jax.random.normal(key, shape=(4, 512))
 
 generator = fm.stylegan2.Generator(pretrained='metfaces')
 params = generator.init(key, z)
-images = generator.apply(params, z)
+images = generator.apply(params, z, train=False)
 
 # Normalize images to be in range [0, 1]
 images = (images - jnp.min(images)) / (jnp.max(images) - jnp.min(images))

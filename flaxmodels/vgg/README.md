@@ -38,7 +38,7 @@ x = jnp.expand_dims(x, axis=0)
 
 vgg16 = fm.VGG16(output='logits', pretrained='imagenet')
 params = vgg16.init(key, x)
-out = vgg16.apply(params, x)
+out = vgg16.apply(params, x, train=False)
 
 ```
 Usage is equivalent for VGG19.

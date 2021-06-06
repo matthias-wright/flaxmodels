@@ -150,20 +150,30 @@ class MappingNetwork(nn.Module):
             x = ops.normalize_2nd_moment(z)
         if self.c_dim_ > 0:
             # Conditioning label
-            w_label_shape = [self.c_dim_, self.embed_features_]
-            w, b = ops.get_weight(w_label_shape, self.lr_multiplier, True, self.param_dict_, 'label_embedding', self.rng, self.dtype)
-            y = nn.Dense(features=self.embed_features_, bias_init=lambda *_ : b, kernel_init=lambda *_ : w, name='label_embedding')(c)
-            y = ops.apply_activation(y, activation='linear')
+            y = ops.LinearLayer(in_features=self.c_dim_,
+                                out_features=self.embed_features_,
+                                use_bias=True,
+                                lr_multiplier=self.lr_multiplier,
+                                activation='linear',
+                                param_dict=self.param_dict_,
+                                layer_name='label_embedding',
+                                dtype=self.dtype,
+                                rng=self.rng)(c)
+
             y = ops.normalize_2nd_moment(y)
             x = jnp.concatenate((x, y), axis=1) if x is not None else y
 
         # Main layers.
         for i in range(self.num_layers_):
-            layer_name = f'fc{i}'
-            w_shape = [x.shape[1], self.layer_features_]
-            w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict_, layer_name, self.rng, self.dtype)
-            x = nn.Dense(features=self.layer_features_, bias_init=lambda *_ : b, kernel_init=lambda *_ : w, name=layer_name)(x)
-            x = ops.apply_activation(x, activation=self.activation)
+            x = ops.LinearLayer(in_features=x.shape[1],
+                                out_features=self.layer_features_,
+                                use_bias=True,
+                                lr_multiplier=self.lr_multiplier,
+                                activation=self.activation,
+                                param_dict=self.param_dict_,
+                                layer_name=f'fc{i}',
+                                dtype=self.dtype,
+                                rng=self.rng)(x)
 
         # Update moving average of W.
         if self.w_avg_beta is not None and train and not skip_w_avg_update:
@@ -230,11 +240,15 @@ class SynthesisLayer(nn.Module):
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         # Affine transformation to obtain style variable.
-        w_affine_shape = [dlatents[:, self.layer_idx].shape[1], x.shape[3]]
-        w_affine, b_affine = ops.get_weight(w_affine_shape, self.lr_multiplier, True, self.param_dict, 'affine', self.rng, self.dtype)
-        w_affine = self.param(name='affine_weight', init_fn=lambda *_ : w_affine)
-        b_affine = self.param(name='affine_bias', init_fn=lambda *_ : b_affine)
-        s = jnp.matmul(dlatents[:, self.layer_idx], w_affine) + b_affine + 1 # [BI] Initial bias is 1.
+        s = ops.LinearLayer(in_features=dlatents[:, self.layer_idx].shape[1],
+                            out_features=x.shape[3],
+                            use_bias=True,
+                            bias_init=1,
+                            lr_multiplier=self.lr_multiplier,
+                            param_dict=self.param_dict,
+                            layer_name='affine',
+                            dtype=self.dtype,
+                            rng=self.rng)(dlatents[:, self.layer_idx])
 
         # Noise variables.
         if self.param_dict is None:
@@ -248,6 +262,8 @@ class SynthesisLayer(nn.Module):
         w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng, self.dtype)
         w = self.param(name='weight', init_fn=lambda *_ : w)
         b = self.param(name='bias', init_fn=lambda *_ : b)
+        w = ops.equalize_lr_weight(w, self.lr_multiplier)
+        b = ops.equalize_lr_bias(b, self.lr_multiplier)
 
         x = ops.modulated_conv2d_layer(x=x, 
                                        w=w, 
@@ -306,17 +322,23 @@ class ToRGBLayer(nn.Module):
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         # Affine transformation to obtain style variable.
-        w_affine_shape = [dlatents[:, self.layer_idx].shape[1], x.shape[3]]
-        w_affine, b_affine = ops.get_weight(w_affine_shape, self.lr_multiplier, True, self.param_dict, 'affine', self.rng, self.dtype)
-        w_affine = self.param(name='affine_weight', init_fn=lambda *_ : w_affine)
-        b_affine = self.param(name='affine_bias', init_fn=lambda *_ : b_affine)
-        s = jnp.matmul(dlatents[:, self.layer_idx], w_affine) + b_affine + 1 # [BI] Initial bias is 1.
+        s = ops.LinearLayer(in_features=dlatents[:, self.layer_idx].shape[1],
+                            out_features=x.shape[3],
+                            use_bias=True,
+                            bias_init=1,
+                            lr_multiplier=self.lr_multiplier,
+                            param_dict=self.param_dict,
+                            layer_name='affine',
+                            dtype=self.dtype,
+                            rng=self.rng)(dlatents[:, self.layer_idx])
 
         # Weight and bias for convolution operation.
         w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
         w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng, self.dtype)
         w = self.param(name='weight', init_fn=lambda *_ : w)
         b = self.param(name='bias', init_fn=lambda *_ : b)
+        w = ops.equalize_lr_weight(w, self.lr_multiplier)
+        b = ops.equalize_lr_bias(b, self.lr_multiplier)
         
         x = ops.modulated_conv2d_layer(x, w, s, fmaps=self.fmaps, kernel=self.kernel, demodulate=False, fused_modconv=self.fused_modconv)
         x += b
@@ -373,7 +395,6 @@ class SynthesisBlock(nn.Module):
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         for i in range(self.num_layers):
-            
             x = SynthesisLayer(fmaps=self.fmaps, 
                                kernel=3,
                                layer_idx=self.res * 2 - (5 - i) if self.res > 2 else 0,

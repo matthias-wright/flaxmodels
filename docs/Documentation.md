@@ -178,7 +178,7 @@ flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_di
 * **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
-apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False*)
+apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
 
 
 ##### Parameters
@@ -187,6 +187,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 * **truncation_psi (float)** - Parameter that controls the linear interpolation for the truncation trick. 1 = no truncation.
 * **truncation_cutoff (int)** - Number of layers for which to apply the truncation trick. None = disable.
 * **skip_w_avg_update (bool)** - Don't update moving average for latent variable w.
+* **train (bool)** - Training mode.
 
 
 <a name="stylegan2_syn"></a>
@@ -271,7 +272,7 @@ flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_featur
 * **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
-apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False*)
+apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
 
 ##### Parameters
 * **z (jax.numpy.ndarray)** - Noise inputs, shape [batch, z_dim].
@@ -279,6 +280,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 * **truncation_psi (float)** - Parameter that controls the linear interpolation for the truncation trick. 1 = no truncation.
 * **truncation_cutoff (int)** - Number of layers for which to apply the truncation trick. None = disable.
 * **skip_w_avg_update (bool)** - Don't update moving average for latent variable w.
+* **train (bool)** - Training mode.
 
 
 <a name="stylegan2_discriminator"></a>

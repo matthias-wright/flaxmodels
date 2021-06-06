@@ -35,7 +35,7 @@ x = jnp.expand_dims(x, axis=0)
 resnet18 = fm.ResNet18(output='logits', pretrained='imagenet')
 params = resnet18.init(key, x)
 # Shape [1, 1000]
-out = resnet18.apply(params, x)
+out = resnet18.apply(params, x, train=False)
 
 ```
 Usage is equivalent for ResNet34, ResNet50, ResNet101, and Resnet152.

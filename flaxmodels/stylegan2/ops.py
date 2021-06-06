@@ -5,6 +5,8 @@ import flax.linen as nn
 from jax import jit
 import numpy as np
 from functools import partial
+from typing import Any
+import h5py
 
 
 #------------------------------------------------------
@@ -58,23 +60,49 @@ def apply_activation(x, activation='linear', alpha=0.2, gain=np.sqrt(2)):
 # Weights 
 #------------------------------------------------------
 def get_weight(shape, lr_multiplier=1, bias=True, param_dict=None, layer_name='', key=None, dtype='float32'):
-    in_features = np.prod(shape[:-1]) # [kernel, kernel, fmaps_in, fmaps_out] for conv2d, [in, out] for fully-connected.
-    out_features = shape[-1]
-
-    w_gain = lr_multiplier / np.sqrt(in_features)
-    b_gain = lr_multiplier
-
     if param_dict is None:
         w = random.normal(key, shape=shape, dtype=dtype) / lr_multiplier
-        if bias: b = jnp.zeros(shape=(out_features,), dtype=dtype)
+        if bias: b = jnp.zeros(shape=(shape[-1],), dtype=dtype)
     else:
         w = jnp.array(param_dict[layer_name]['weight']).astype(dtype)
         if bias: b = jnp.array(param_dict[layer_name]['bias']).astype(dtype)
     
-    w *= w_gain
-    if bias: b *= b_gain
     if bias: return w, b
     return w
+
+
+def equalize_lr_weight(w, lr_multiplier=1):
+    """
+    Equalized learning rate, see: https://arxiv.org/pdf/1710.10196.pdf.
+
+    Args:
+        w (tensor): Weight parameter. Shape [kernel, kernel, fmaps_in, fmaps_out]
+                    for convolutions and shape [in, out] for MLPs.
+        lr_multiplier (float): Learning rate multiplier.
+
+    Returns:
+        (tensor): Scaled weight parameter.
+    """
+    in_features = np.prod(w.shape[:-1])
+    gain = lr_multiplier / np.sqrt(in_features)
+    w *= gain
+    return w
+
+
+def equalize_lr_bias(b, lr_multiplier=1):
+    """
+    Equalized learning rate, see: https://arxiv.org/pdf/1710.10196.pdf.
+
+    Args:
+        b (tensor): Bias parameter.
+        lr_multiplier (float): Learning rate multiplier.
+
+    Returns:
+        (tensor): Scaled bias parameter.
+    """
+    gain = lr_multiplier
+    b *= gain
+    return b
 
 
 #------------------------------------------------------
@@ -166,7 +194,66 @@ def upfirdn2d(x, f, padding=(2, 1, 2, 1), up=1, down=1, strides=(1, 1), flip_fil
 #------------------------------------------------------
 # Linear 
 #------------------------------------------------------
-@partial(jax.jit, static_argnums=(3,))
+class LinearLayer(nn.Module):
+    """
+    Linear Layer.
+
+    Attributes:
+        in_features (int): Input dimension.
+        out_features (int): Output dimension.
+        use_bias (bool): If True, use bias.
+        bias_init (int): Bias init.
+        lr_multiplier (float): Learning rate multiplier.
+        activation (str): Activation function: 'relu', 'lrelu', etc.
+        param_dict (h5py.Group): Parameter dict with pretrained parameters.
+        layer_name (str): Layer name.
+        dtype (str): Data type.
+        rng (jax.random.PRNGKey): Random seed.
+    """
+    in_features: int
+    out_features: int
+    use_bias: bool=True
+    bias_init: int=0
+    lr_multiplier: float=1
+    activation: str='linear'
+    param_dict: h5py.Group=None
+    layer_name: str=None
+    dtype: str='float32'
+    rng: Any=random.PRNGKey(0)
+
+    @nn.compact
+    def __call__(self, x):
+        """
+        Run Linear Layer.
+        
+        Args:
+            x (tensor): Input tensor of shape [N, in_features].
+            
+        Returns:
+            (tensor): Output tensor of shape [N, out_features].
+        """
+        w_shape = [self.in_features, self.out_features]
+        params = get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng, self.dtype)
+
+        if self.use_bias:
+            w, b = params
+        else:
+            w = params
+
+        w = self.param(name='weight', init_fn=lambda *_ : w)
+        w = equalize_lr_weight(w, self.lr_multiplier)
+        x = jnp.matmul(x, w)
+
+        if self.use_bias:
+            b = self.param(name='bias', init_fn=lambda *_ : b)
+            b = equalize_lr_bias(b, self.lr_multiplier)
+            x += b
+            x += self.bias_init
+        
+        x = apply_activation(x, activation=self.activation)
+        return x
+
+
 def linear_layer(x, w, b, activation='linear'):
     x = jnp.matmul(x, w)
     if b is not None:
