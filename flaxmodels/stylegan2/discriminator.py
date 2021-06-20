@@ -305,6 +305,7 @@ class Discriminator(nn.Module):
         self.c_dim_ = self.c_dim
         self.architecture_ = self.architecture
         self.mbstd_group_size_ = self.mbstd_group_size
+        self.param_dict = None
         if self.pretrained is not None:
             assert self.pretrained in URLS.keys(), f'Pretrained model not available: {self.pretrained}'
             ckpt_file = utils.download(self.ckpt_dir, URLS[self.pretrained])
