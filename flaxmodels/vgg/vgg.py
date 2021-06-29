@@ -47,6 +47,7 @@ class VGG(nn.Module):
             If this argument is None, the weights will be saved to a temp directory.
         rng (jax.numpy.ndarray): 
             Random seed.
+        dtype (str): Data type.
     """
     output: str='softmax'
     pretrained: str='imagenet'
@@ -57,6 +58,7 @@ class VGG(nn.Module):
     bias_init: functools.partial=nn.initializers.zeros
     ckpt_dir: str=None
     rng: Any=random.PRNGKey(0)
+    dtype: str='float32'
 
     def setup(self):
         self.param_dict = None
@@ -90,8 +92,8 @@ class VGG(nn.Module):
 
         if self.pretrained == 'imagenet':
             # normalize input
-            mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1)
-            std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1)
+            mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1).astype(x.dtype)
+            std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1).astype(x.dtype)
             x = (x - mean) / std
             
             if self.num_classes != 1000:
@@ -104,28 +106,28 @@ class VGG(nn.Module):
 
         act = {}
 
-        x = self._conv_block(x, features=64, num_layers=2, block_num=1, act=act)
+        x = self._conv_block(x, features=64, num_layers=2, block_num=1, act=act, dtype=self.dtype)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
-        x = self._conv_block(x, features=128, num_layers=2, block_num=2, act=act)
+        x = self._conv_block(x, features=128, num_layers=2, block_num=2, act=act, dtype=self.dtype)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
-        x = self._conv_block(x, features=256, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=3, act=act)
+        x = self._conv_block(x, features=256, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=3, act=act, dtype=self.dtype)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
-        x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=4, act=act)
+        x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=4, act=act, dtype=self.dtype)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
-        x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=5, act=act)
+        x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=5, act=act, dtype=self.dtype)
         x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
 
         if self.include_head:
             # NCHW format because weights are from pytorch
             x = jnp.transpose(x, axes=(0, 3, 1, 2))
             x = jnp.reshape(x, (-1, x.shape[1] * x.shape[2] * x.shape[3]))
-            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act, train=train)
-            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act, train=train)
-            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act, train=train)
+            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act, train=train, dtype=self.dtype)
+            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act, train=train, dtype=self.dtype)
+            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act, train=train, dtype=self.dtype)
 
         if self.output == 'activations':
             return act 
@@ -136,22 +138,22 @@ class VGG(nn.Module):
             x = nn.log_softmax(x)
         return x
 
-    def _conv_block(self, x, features, num_layers, block_num, act):
+    def _conv_block(self, x, features, num_layers, block_num, act, dtype='float32'):
         for l in range(num_layers):
             layer_name = f'conv{block_num}_{l + 1}'
             w = self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
             b = self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
-            x = nn.Conv(features=features, kernel_size=(3, 3), kernel_init=w, bias_init=b, padding='same', name=layer_name)(x)
+            x = nn.Conv(features=features, kernel_size=(3, 3), kernel_init=w, bias_init=b, padding='same', name=layer_name, dtype=dtype)(x)
             act[layer_name] = x
             x = nn.relu(x)
             act[f'relu{block_num}_{l + 1}'] = x
         return x
 
-    def _fc_block(self, x, features, block_num, act, relu=False, dropout=False, train=True):
+    def _fc_block(self, x, features, block_num, act, relu=False, dropout=False, train=True, dtype='float32'):
         layer_name = f'fc{block_num}'
         w = self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
         b = self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
-        x = nn.Dense(features=features, kernel_init=w, bias_init=b, name=layer_name)(x)
+        x = nn.Dense(features=features, kernel_init=w, bias_init=b, name=layer_name, dtype=dtype)(x)
         act[layer_name] = x
         if relu:
             x = nn.relu(x)
@@ -167,7 +169,8 @@ def VGG16(output='softmax',
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
-          rng=random.PRNGKey(0)):
+          rng=random.PRNGKey(0),
+          dtype='float32'):
     """
     Implementation of the VGG16 network by Simonyan & Zisserman.
     Reference: https://arxiv.org/abs/1409.1556.
@@ -202,6 +205,7 @@ def VGG16(output='softmax',
             If this argument is None, the weights will be saved to a temp directory.
         rng (jax.numpy.ndarray): 
             Random seed.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): VGG network.
@@ -214,7 +218,8 @@ def VGG16(output='softmax',
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
-               rng=rng)
+               rng=rng,
+               dtype=dtype)
 
 
 def VGG19(output='softmax',
@@ -224,7 +229,8 @@ def VGG19(output='softmax',
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
-          rng=random.PRNGKey(0)):
+          rng=random.PRNGKey(0),
+          dtype='float32'):
     """
     Implementation of the VGG19 network by Simonyan & Zisserman.
     Reference: https://arxiv.org/abs/1409.1556.
@@ -259,6 +265,7 @@ def VGG19(output='softmax',
             If this argument is None, the weights will be saved to a temp directory.
         rng (jax.numpy.ndarray): 
             Random seed.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): VGG network.
@@ -271,5 +278,6 @@ def VGG19(output='softmax',
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
-               rng=rng)
+               rng=rng,
+               dtype=dtype)
 
