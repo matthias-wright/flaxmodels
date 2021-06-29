@@ -432,7 +432,7 @@ flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True
 
 <a name="vgg16"></a>
 ### VGG16
-flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
+flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0), dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -447,11 +447,12 @@ flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **rng (jax.numpy.ndarray)** - Random seed.
+* **dtype (str)** - Data type.
 
 
 <a name="vgg19"></a>
 ### VGG19
-flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0)*) -> flax.linen.Module
+flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0), dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -466,5 +467,6 @@ flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **rng (jax.numpy.ndarray)** - Random seed.
+* **dtype (str)** - Data type.
 
 
