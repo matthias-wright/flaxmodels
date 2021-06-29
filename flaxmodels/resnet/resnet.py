@@ -4,6 +4,7 @@ import functools
 from typing import (Any, Callable, Iterable, Optional, Tuple, Union)
 import h5py
 import warnings
+# TODO
 from . import ops
 from .. import utils
 
@@ -35,6 +36,7 @@ class BasicBlock(nn.Module):
         kernel_init (functools.partial): Kernel initializer.
         bias_init (functools.partial): Bias initializer.
         block_name (str): Name of block.
+        dtype (str): Data type.
     """
     features: int
     kernel_size: Union[int, Iterable[int]] = (3, 3)
@@ -44,6 +46,7 @@ class BasicBlock(nn.Module):
     kernel_init: functools.partial = nn.initializers.lecun_normal()
     bias_init: functools.partial = nn.initializers.zeros
     block_name: str = None
+    dtype: str = 'float32'
 
     @nn.compact
     def __call__(self, x, act, train=True):
@@ -65,9 +68,15 @@ class BasicBlock(nn.Module):
                     strides=(2, 2) if self.downsample else (1, 1),
                     padding=((1, 1), (1, 1)),
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn1'],
+                           dtype=self.dtype) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -75,22 +84,30 @@ class BasicBlock(nn.Module):
                     strides=(1, 1), 
                     padding=((1, 1), (1, 1)),
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn2'],
+                           dtype=self.dtype) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features, 
                                kernel_size=(1, 1), 
                                strides=(2, 2), 
                                kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['downsample']['conv']['weight']), 
-                               use_bias=False)(residual)
+                               use_bias=False,
+                               dtype=self.dtype)(residual)
 
             residual = ops.batch_norm(residual,
                                       train=train,
                                       epsilon=1e-05,
                                       momentum=0.1,
-                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
+                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn'],
+                                      dtype=self.dtype) 
         
         x += residual
         x = nn.relu(x)
@@ -113,6 +130,7 @@ class Bottleneck(nn.Module):
         bias_init (functools.partial): Bias initializer.
         block_name (str): Name of block.
         expansion (int): Factor to multiply number of output channels with.
+        dtype (str): Data type.
     """
     features: int
     kernel_size: Union[int, Iterable[int]] = (3, 3)
@@ -123,6 +141,7 @@ class Bottleneck(nn.Module):
     bias_init: functools.partial = nn.initializers.zeros
     block_name: str = None
     expansion: int = 4
+    dtype: str = 'float32'
 
     @nn.compact
     def __call__(self, x, act, train=True):
@@ -143,9 +162,15 @@ class Bottleneck(nn.Module):
                     kernel_size=(1, 1), 
                     strides=(1, 1),
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']), 
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1']) 
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn1'],
+                           dtype=self.dtype) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features, 
@@ -153,31 +178,45 @@ class Bottleneck(nn.Module):
                     strides=(2, 2) if self.downsample and self.stride else (1, 1), 
                     padding=((1, 1), (1, 1)),
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv2']['weight']), 
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
         
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn2']) 
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn2'],
+                           dtype=self.dtype) 
         x = nn.relu(x)
 
         x = nn.Conv(features=self.features * self.expansion, 
                     kernel_size=(1, 1), 
                     strides=(1, 1), 
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv3']['weight']), 
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn3']) 
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn3'],
+                           dtype=self.dtype) 
 
         if self.downsample:
             residual = nn.Conv(features=self.features * self.expansion, 
                                kernel_size=(1, 1), 
                                strides=(2, 2) if self.stride else (1, 1), 
                                kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['downsample']['conv']['weight']), 
-                               use_bias=False)(residual)
+                               use_bias=False,
+                               dtype=self.dtype)(residual)
 
             residual = ops.batch_norm(residual,
                                       train=train,
                                       epsilon=1e-05,
                                       momentum=0.1,
-                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn']) 
+                                      params=None if self.param_dict is None else self.param_dict['downsample']['bn'],
+                                      dtype=self.dtype) 
         
         x += residual
         x = nn.relu(x)
@@ -221,6 +260,7 @@ class ResNet(nn.Module):
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
     """
     output: str='softmax'
     pretrained: str='imagenet'
@@ -230,6 +270,7 @@ class ResNet(nn.Module):
     kernel_init: functools.partial=nn.initializers.lecun_normal()
     bias_init: functools.partial=nn.initializers.zeros
     ckpt_dir: str=None
+    dtype: str = 'float32'
 
     def setup(self):
         self.param_dict = None
@@ -253,8 +294,8 @@ class ResNet(nn.Module):
         """     
         if self.pretrained == 'imagenet':
             # normalize input
-            mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1)
-            std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1)
+            mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1).astype(x.dtype)
+            std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1).astype(x.dtype)
             x = (x - mean) / std
             
             if self.num_classes != 1000:
@@ -271,10 +312,16 @@ class ResNet(nn.Module):
                     kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['conv1']['weight']),
                     strides=(2, 2), 
                     padding=((3, 3), (3, 3)),
-                    use_bias=False)(x)
+                    use_bias=False,
+                    dtype=self.dtype)(x)
         act['conv1'] = x
 
-        x = ops.batch_norm(x, train=train, epsilon=1e-05, momentum=0.1, params=None if self.param_dict is None else self.param_dict['bn1'])
+        x = ops.batch_norm(x,
+                           train=train,
+                           epsilon=1e-05,
+                           momentum=0.1,
+                           params=None if self.param_dict is None else self.param_dict['bn1'],
+                           dtype=self.dtype)
         x = nn.relu(x)
         x = nn.max_pool(x, window_shape=(3, 3), strides=(2, 2), padding=((1, 1), (1, 1)))
 
@@ -282,28 +329,50 @@ class ResNet(nn.Module):
         down = self.block.__name__ == 'Bottleneck'
         for i in range(LAYERS[self.architecture][0]):
             params = None if self.param_dict is None else self.param_dict['layer1'][f'block{i}']
-            x = self.block(features=64, kernel_size=(3, 3), downsample=i == 0 and down, stride=i != 0, param_dict=params, block_name=f'block1_{i}')(x, act, train)
+            x = self.block(features=64,
+                           kernel_size=(3, 3),
+                           downsample=i == 0 and down,
+                           stride=i != 0,
+                           param_dict=params,
+                           block_name=f'block1_{i}',
+                           dtype=self.dtype)(x, act, train)
         
         # Layer 2
         for i in range(LAYERS[self.architecture][1]):
             params = None if self.param_dict is None else self.param_dict['layer2'][f'block{i}']
-            x = self.block(features=128, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block2_{i}')(x, act, train)
+            x = self.block(features=128,
+                           kernel_size=(3, 3),
+                           downsample=i == 0,
+                           param_dict=params,
+                           block_name=f'block2_{i}',
+                           dtype=self.dtype)(x, act, train)
         
         # Layer 3
         for i in range(LAYERS[self.architecture][2]):
             params = None if self.param_dict is None else self.param_dict['layer3'][f'block{i}']
-            x = self.block(features=256, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block3_{i}')(x, act, train)
+            x = self.block(features=256,
+                           kernel_size=(3, 3),
+                           downsample=i == 0,
+                           param_dict=params,
+                           block_name=f'block3_{i}',
+                           dtype=self.dtype)(x, act, train)
 
         # Layer 4
         for i in range(LAYERS[self.architecture][3]):
             params = None if self.param_dict is None else self.param_dict['layer4'][f'block{i}']
-            x = self.block(features=512, kernel_size=(3, 3), downsample=i == 0, param_dict=params, block_name=f'block4_{i}')(x, act, train)
+            x = self.block(features=512,
+                           kernel_size=(3, 3),
+                           downsample=i == 0,
+                           param_dict=params,
+                           block_name=f'block4_{i}',
+                           dtype=self.dtype)(x, act, train)
 
         # Classifier
         x = jnp.mean(x, axis=(1, 2))
         x = nn.Dense(features=num_classes,
                      kernel_init=self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['fc']['weight']), 
-                     bias_init=self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['fc']['bias']))(x)
+                     bias_init=self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict['fc']['bias']),
+                     dtype=self.dtype)(x)
         act['fc'] = x
         
         if self.output == 'softmax':
@@ -320,7 +389,8 @@ def ResNet18(output='softmax',
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
-             ckpt_dir=None):
+             ckpt_dir=None,
+             dtype='float32'):
     """
     Implementation of the ResNet18 by He et al.
     Reference: https://arxiv.org/abs/1512.03385
@@ -349,6 +419,7 @@ def ResNet18(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): ResNet network.
@@ -360,7 +431,8 @@ def ResNet18(output='softmax',
                   block=BasicBlock,
                   kernel_init=kernel_init,
                   bias_init=bias_init,
-                  ckpt_dir=ckpt_dir)
+                  ckpt_dir=ckpt_dir,
+                  dtype=dtype)
 
 
 def ResNet34(output='softmax',
@@ -368,7 +440,8 @@ def ResNet34(output='softmax',
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
-             ckpt_dir=None):
+             ckpt_dir=None,
+             dtype='float32'):
     """
     Implementation of the ResNet34 by He et al.
     Reference: https://arxiv.org/abs/1512.03385
@@ -397,6 +470,7 @@ def ResNet34(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): ResNet network.
@@ -408,7 +482,8 @@ def ResNet34(output='softmax',
                   block=BasicBlock,
                   kernel_init=kernel_init,
                   bias_init=bias_init,
-                  ckpt_dir=ckpt_dir)
+                  ckpt_dir=ckpt_dir,
+                  dtype=dtype)
 
 
 def ResNet50(output='softmax',
@@ -416,7 +491,8 @@ def ResNet50(output='softmax',
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
-             ckpt_dir=None):
+             ckpt_dir=None,
+             dtype='float32'):
     """
     Implementation of the ResNet50 by He et al.
     Reference: https://arxiv.org/abs/1512.03385
@@ -445,6 +521,7 @@ def ResNet50(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): ResNet network.
@@ -456,7 +533,8 @@ def ResNet50(output='softmax',
                   block=Bottleneck,
                   kernel_init=kernel_init,
                   bias_init=bias_init,
-                  ckpt_dir=ckpt_dir)
+                  ckpt_dir=ckpt_dir,
+                  dtype=dtype)
 
 
 def ResNet101(output='softmax',
@@ -464,7 +542,8 @@ def ResNet101(output='softmax',
               num_classes=1000,
               kernel_init=nn.initializers.lecun_normal(),
               bias_init=nn.initializers.zeros,
-              ckpt_dir=None):
+              ckpt_dir=None,
+              dtype='float32'):
     """
     Implementation of the ResNet101 by He et al.
     Reference: https://arxiv.org/abs/1512.03385
@@ -493,6 +572,7 @@ def ResNet101(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): ResNet network.
@@ -504,7 +584,8 @@ def ResNet101(output='softmax',
                   block=Bottleneck,
                   kernel_init=kernel_init,
                   bias_init=bias_init,
-                  ckpt_dir=ckpt_dir)
+                  ckpt_dir=ckpt_dir,
+                  dtype=dtype)
 
 
 def ResNet152(output='softmax',
@@ -512,7 +593,8 @@ def ResNet152(output='softmax',
               num_classes=1000,
               kernel_init=nn.initializers.lecun_normal(),
               bias_init=nn.initializers.zeros,
-              ckpt_dir=None):
+              ckpt_dir=None,
+              dtype='float32'):
     """
     Implementation of the ResNet152 by He et al.
     Reference: https://arxiv.org/abs/1512.03385
@@ -541,6 +623,7 @@ def ResNet152(output='softmax',
             The directory to which the pretrained weights are downloaded.
             Only relevant if a pretrained model is used. 
             If this argument is None, the weights will be saved to a temp directory.
+        dtype (str): Data type.
 
     Returns:
         (nn.Module): ResNet network.
@@ -552,5 +635,6 @@ def ResNet152(output='softmax',
                   block=Bottleneck,
                   kernel_init=kernel_init,
                   bias_init=bias_init,
-                  ckpt_dir=ckpt_dir)
+                  ckpt_dir=ckpt_dir,
+                  dtype=dtype)
 

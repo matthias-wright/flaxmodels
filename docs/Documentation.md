@@ -343,7 +343,7 @@ apply(*z, c=None*)
 
 <a name="resnet18"></a>
 ### ResNet18
-flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -356,11 +356,12 @@ flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.l
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
+* **dtype (str)** - Data type.
 
 
 <a name="resnet34"></a>
 ### ResNet34
-flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -373,10 +374,12 @@ flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True,
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
+* **dtype (str)** - Data type.
+
 
 <a name="resnet50"></a>
 ### ResNet50
-flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -389,11 +392,12 @@ flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True,
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
+* **dtype (str)** - Data type.
 
 
 <a name="resnet101"></a>
 ### ResNet101
-flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None*) -> flax.linen.Module
+flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -406,11 +410,12 @@ flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
+* **dtype (str)** - Data type.
 
 
 <a name="resnet152"></a>
 ### ResNet152
-flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None>*) -> flax.linen.Module
+flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -423,6 +428,7 @@ flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
+* **dtype (str)** - Data type.
 
 
 <a name="vgg"></a>

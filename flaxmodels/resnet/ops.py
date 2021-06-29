@@ -16,11 +16,12 @@ Dtype = Any
 #---------------------------------------------------------------#
 # Normalization
 #---------------------------------------------------------------#
-def batch_norm(x, train, epsilon=1e-05, momentum=0.1, params=None):
+def batch_norm(x, train, epsilon=1e-05, momentum=0.1, params=None, dtype='float32'):
     if params is None:
         x = BatchNorm(epsilon=epsilon,
                       momentum=momentum,
-                      use_running_average=not train)(x)
+                      use_running_average=not train,
+                      dtype=dtype)(x)
     else:
         x = BatchNorm(epsilon=epsilon,
                       momentum=momentum,
@@ -28,7 +29,8 @@ def batch_norm(x, train, epsilon=1e-05, momentum=0.1, params=None):
                       scale_init=lambda *_ : jnp.array(params['scale']),
                       mean_init=lambda *_ : jnp.array(params['mean']),
                       var_init=lambda *_ : jnp.array(params['var']),
-                      use_running_average=not train)(x)
+                      use_running_average=not train,
+                      dtype=dtype)(x)
     return x
 
 
