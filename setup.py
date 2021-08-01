@@ -8,7 +8,7 @@ with open(os.path.join(directory, 'README.md'), encoding='utf-8') as f:
 
 setup(name='flaxmodels',
       version='0.1.0',
-      url='https://github.com/matthias-wright/flax_models',
+      url='https://github.com/matthias-wright/flaxmodels',
       author='Matthias Wright',
       packages=find_packages(),
       install_requires=['h5py==2.10.0',

@@ -4,7 +4,6 @@ import functools
 from typing import (Any, Callable, Iterable, Optional, Tuple, Union)
 import h5py
 import warnings
-# TODO
 from . import ops
 from .. import utils
 
@@ -39,14 +38,14 @@ class BasicBlock(nn.Module):
         dtype (str): Data type.
     """
     features: int
-    kernel_size: Union[int, Iterable[int]] = (3, 3)
-    downsample: bool = False
-    stride: bool = True
-    param_dict: h5py.Group = None
-    kernel_init: functools.partial = nn.initializers.lecun_normal()
-    bias_init: functools.partial = nn.initializers.zeros
-    block_name: str = None
-    dtype: str = 'float32'
+    kernel_size: Union[int, Iterable[int]]=(3, 3)
+    downsample: bool=False
+    stride: bool=True
+    param_dict: h5py.Group=None
+    kernel_init: functools.partial=nn.initializers.lecun_normal()
+    bias_init: functools.partial=nn.initializers.zeros
+    block_name: str=None
+    dtype: str='float32'
 
     @nn.compact
     def __call__(self, x, act, train=True):
@@ -133,15 +132,15 @@ class Bottleneck(nn.Module):
         dtype (str): Data type.
     """
     features: int
-    kernel_size: Union[int, Iterable[int]] = (3, 3)
-    downsample: bool = False
-    stride: bool = True
-    param_dict: Any = None
-    kernel_init: functools.partial = nn.initializers.lecun_normal()
-    bias_init: functools.partial = nn.initializers.zeros
-    block_name: str = None
-    expansion: int = 4
-    dtype: str = 'float32'
+    kernel_size: Union[int, Iterable[int]]=(3, 3)
+    downsample: bool=False
+    stride: bool=True
+    param_dict: Any=None
+    kernel_init: functools.partial=nn.initializers.lecun_normal()
+    bias_init: functools.partial=nn.initializers.zeros
+    block_name: str=None
+    expansion: int=4
+    dtype: str='float32'
 
     @nn.compact
     def __call__(self, x, act, train=True):
@@ -270,7 +269,7 @@ class ResNet(nn.Module):
     kernel_init: functools.partial=nn.initializers.lecun_normal()
     bias_init: functools.partial=nn.initializers.zeros
     ckpt_dir: str=None
-    dtype: str = 'float32'
+    dtype: str='float32'
 
     def setup(self):
         self.param_dict = None
