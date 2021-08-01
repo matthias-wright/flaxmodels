@@ -49,6 +49,7 @@ def minibatch_stddev_layer(x, group_size=None, num_new_features=1):
 # Activation 
 #------------------------------------------------------
 def apply_activation(x, activation='linear', alpha=0.2, gain=np.sqrt(2)):
+    gain = jnp.array(gain, dtype=x.dtype)
     if activation == 'relu':
         return jax.nn.relu(x) * gain
     if activation == 'leaky_relu':
@@ -59,13 +60,13 @@ def apply_activation(x, activation='linear', alpha=0.2, gain=np.sqrt(2)):
 #------------------------------------------------------
 # Weights 
 #------------------------------------------------------
-def get_weight(shape, lr_multiplier=1, bias=True, param_dict=None, layer_name='', key=None, dtype='float32'):
+def get_weight(shape, lr_multiplier=1, bias=True, param_dict=None, layer_name='', key=None):
     if param_dict is None:
-        w = random.normal(key, shape=shape, dtype=dtype) / lr_multiplier
-        if bias: b = jnp.zeros(shape=(shape[-1],), dtype=dtype)
+        w = random.normal(key, shape=shape, dtype=jnp.float32) / lr_multiplier
+        if bias: b = jnp.zeros(shape=(shape[-1],), dtype=jnp.float32)
     else:
-        w = jnp.array(param_dict[layer_name]['weight']).astype(dtype)
-        if bias: b = jnp.array(param_dict[layer_name]['bias']).astype(dtype)
+        w = jnp.array(param_dict[layer_name]['weight']).astype(jnp.float32)
+        if bias: b = jnp.array(param_dict[layer_name]['bias']).astype(jnp.float32)
     
     if bias: return w, b
     return w
@@ -159,7 +160,7 @@ def setup_filter(f, normalize=True, flip_filter=False, gain=1, separable=None):
 def upfirdn2d(x, f, padding=(2, 1, 2, 1), up=1, down=1, strides=(1, 1), flip_filter=False, gain=1):
 
     if f is None:
-        f = jnp.ones((1, 1))
+        f = jnp.ones((1, 1), dtype=jnp.float32)
 
     B, H, W, C = x.shape
     padx0, padx1, pady0, pady1 = padding
@@ -182,7 +183,7 @@ def upfirdn2d(x, f, padding=(2, 1, 2, 1), up=1, down=1, strides=(1, 1), flip_fil
     # convole filter
     f = jnp.repeat(jnp.expand_dims(f, axis=(-2, -1)), repeats=C, axis=-1)
     x = jax.lax.conv_general_dilated(x,
-                                     f,
+                                     f.astype(x.dtype),
                                      window_strides=strides or (1,) * (x.ndim - 2),
                                      padding='valid',
                                      dimension_numbers=nn.linear._conv_dimension_numbers(x.shape),
@@ -208,7 +209,7 @@ class LinearLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters.
         layer_name (str): Layer name.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     in_features: int
     out_features: int
@@ -233,7 +234,7 @@ class LinearLayer(nn.Module):
             (tensor): Output tensor of shape [N, out_features].
         """
         w_shape = [self.in_features, self.out_features]
-        params = get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng, self.dtype)
+        params = get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng)
 
         if self.use_bias:
             w, b = params
@@ -242,24 +243,16 @@ class LinearLayer(nn.Module):
 
         w = self.param(name='weight', init_fn=lambda *_ : w)
         w = equalize_lr_weight(w, self.lr_multiplier)
-        x = jnp.matmul(x, w)
+        x = jnp.matmul(x, w.astype(x.dtype))
 
         if self.use_bias:
             b = self.param(name='bias', init_fn=lambda *_ : b)
             b = equalize_lr_bias(b, self.lr_multiplier)
-            x += b
+            x += b.astype(x.dtype)
             x += self.bias_init
         
         x = apply_activation(x, activation=self.activation)
         return x
-
-
-def linear_layer(x, w, b, activation='linear'):
-    x = jnp.matmul(x, w)
-    if b is not None:
-        x += b
-    x = apply_activation(x, activation=activation)
-    return x
 
 
 #------------------------------------------------------
@@ -413,13 +406,13 @@ def modulated_conv2d_layer(x, w, s, fmaps, kernel, up=False, down=False, demodul
     # Get weight.
     wshape = (kernel, kernel, x.shape[3], fmaps)
     if x.dtype.name == 'float16' and not fused_modconv and demodulate:
-        w *= jnp.sqrt(1 / jnp.prod(wshape[:-1])) / jnp.max(jnp.abs(w), axis=(0, 1, 2)) # Pre-normalize to avoid float16 overflow.
+        w *= jnp.sqrt(1 / np.prod(wshape[:-1])) / jnp.max(jnp.abs(w), axis=(0, 1, 2)) # Pre-normalize to avoid float16 overflow.
     ww = w[jnp.newaxis] # [BkkIO] Introduce minibatch dimension.
 
     # Modulate.
     if x.dtype.name == 'float16' and not fused_modconv and demodulate:
         s *= 1 / jnp.max(jnp.abs(s)) # Pre-normalize to avoid float16 overflow.
-    ww *= s[:, jnp.newaxis, jnp.newaxis, :, jnp.newaxis].astype(x.dtype) # [BkkIO] Scale input feature maps.
+    ww *= s[:, jnp.newaxis, jnp.newaxis, :, jnp.newaxis].astype(w.dtype) # [BkkIO] Scale input feature maps.
 
     # Demodulate.
     if demodulate:

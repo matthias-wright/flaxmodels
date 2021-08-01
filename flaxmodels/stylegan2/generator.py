@@ -77,7 +77,7 @@ class MappingNetwork(nn.Module):
         lr_multiplier (float): Learning rate multiplier for the mapping layers.
         w_avg_beta (float): Decay for tracking the moving average of W during training, None = do not track.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     # Dimensionality
     z_dim: int=512
@@ -124,7 +124,7 @@ class MappingNetwork(nn.Module):
             self.layer_features_ = self.w_dim
 
         if self.param_dict_ is not None and 'w_avg' in self.param_dict_:
-            self.w_avg =  self.variable('moving_stats', 'w_avg', lambda *_ : jnp.array(self.param_dict_['w_avg']), [self.w_dim])
+            self.w_avg = self.variable('moving_stats', 'w_avg', lambda *_ : jnp.array(self.param_dict_['w_avg']), [self.w_dim])
         else:
             self.w_avg = self.variable('moving_stats', 'w_avg', jnp.zeros, [self.w_dim])
        
@@ -147,7 +147,7 @@ class MappingNetwork(nn.Module):
         # Embed, normalize, and concat inputs.
         x = None
         if self.z_dim > 0:
-            x = ops.normalize_2nd_moment(z)
+            x = ops.normalize_2nd_moment(z.astype(jnp.float32))
         if self.c_dim_ > 0:
             # Conditioning label
             y = ops.LinearLayer(in_features=self.c_dim_,
@@ -158,7 +158,7 @@ class MappingNetwork(nn.Module):
                                 param_dict=self.param_dict_,
                                 layer_name='label_embedding',
                                 dtype=self.dtype,
-                                rng=self.rng)(c)
+                                rng=self.rng)(c.astype(jnp.float32))
 
             y = ops.normalize_2nd_moment(y)
             x = jnp.concatenate((x, y), axis=1) if x is not None else y
@@ -202,43 +202,59 @@ class SynthesisLayer(nn.Module):
         fmaps (int): Number of output channels of the modulated convolution.
         kernel (int): Kernel size of the modulated convolution.
         layer_idx (int): Layer index. Used to access the latent code for a specific layer.
+        res (int): Resolution (log2) of the current layer.
         lr_multiplier (float): Learning rate multiplier.
         up (bool): If True, upsample the spatial resolution.
         activation (str): Activation function: 'relu', 'lrelu', etc.
         use_noise (bool): If True, add spatial-specific noise.
-        randomize_noise (bool): If True, use random noise. If False, use noise constant from checkpoint.
         resample_kernel (Tuple): Kernel that is used for FIR filter.
         fused_modconv (bool): If True, Perform modulation, convolution, and demodulation as a single fused operation.
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     kernel: int
     layer_idx: int
+    res: int
     lr_multiplier: float=1
     up: bool=False
     activation: str='leaky_relu'
     use_noise: bool=True
-    randomize_noise: bool=True
     resample_kernel: Tuple=(1, 3, 3, 1)
     fused_modconv: bool=False
     param_dict: h5py.Group=None
+    clip_conv: float=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
+    def setup(self):
+        if self.param_dict is not None:
+            noise_const = jnp.array(self.param_dict['noise_const'], dtype=self.dtype)
+        else:
+            noise_const = random.normal(self.rng, shape=(1, 2 ** self.res, 2 ** self.res, 1), dtype=self.dtype)
+        self.noise_const = self.variable('noise_consts', 'noise_const', lambda *_: noise_const)
+
     @nn.compact
-    def __call__(self, x, dlatents):
+    def __call__(self, x, dlatents, noise_mode='random', rng=random.PRNGKey(0)):
         """
         Run Synthesis Layer.
 
         Args:
             x (tensor): Input tensor of the shape [N, H, W, C].
             dlatents (tensor): Intermediate latents (W) of shape [N, num_ws, w_dim].
+            noise_mode (str): Noise type.
+                              - 'const': Constant noise.
+                              - 'random': Random noise.
+                              - 'none': No noise.
+            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
+        assert noise_mode in ['const', 'random', 'none']
+
         # Affine transformation to obtain style variable.
         s = ops.LinearLayer(in_features=dlatents[:, self.layer_idx].shape[1],
                             out_features=x.shape[3],
@@ -259,7 +275,7 @@ class SynthesisLayer(nn.Module):
 
         # Weight and bias for convolution operation.
         w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng, self.dtype)
+        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng)
         w = self.param(name='weight', init_fn=lambda *_ : w)
         b = self.param(name='bias', init_fn=lambda *_ : b)
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
@@ -273,15 +289,17 @@ class SynthesisLayer(nn.Module):
                                        up=self.up, 
                                        resample_kernel=self.resample_kernel, 
                                        fused_modconv=self.fused_modconv)
-
-        if self.use_noise:
-            if not self.randomize_noise and self.param_dict is not None:
-                noise = jnp.array(self.param_dict['noise_const']) 
-            else:
-                noise = random.normal(self.rng, shape=(x.shape[0], x.shape[1], x.shape[2], 1), dtype=self.dtype)
+        
+        if self.use_noise and noise_mode != 'none':
+            if noise_mode == 'const':
+                noise = self.noise_const.value
+            elif noise_mode == 'random':
+                noise = random.normal(rng, shape=(x.shape[0], x.shape[1], x.shape[2], 1), dtype=self.dtype)
             x += noise * noise_strength.astype(self.dtype)
-        x += b
+        x += b.astype(x.dtype)
         x = ops.apply_activation(x, activation=self.activation)
+        if self.clip_conv is not None:
+            x = jnp.clip(x, -self.clip_conv, self.clip_conv)
         return x
 
 
@@ -296,8 +314,9 @@ class ToRGBLayer(nn.Module):
         lr_multiplier (float): Learning rate multiplier.
         fused_modconv (bool): If True, Perform modulation, convolution, and demodulation as a single fused operation.
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     layer_idx: int
@@ -305,6 +324,7 @@ class ToRGBLayer(nn.Module):
     lr_multiplier: float=1
     fused_modconv: bool=False
     param_dict: h5py.Group=None
+    clip_conv: float=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
     
@@ -334,17 +354,19 @@ class ToRGBLayer(nn.Module):
 
         # Weight and bias for convolution operation.
         w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng, self.dtype)
+        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng)
         w = self.param(name='weight', init_fn=lambda *_ : w)
         b = self.param(name='bias', init_fn=lambda *_ : b)
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
         
         x = ops.modulated_conv2d_layer(x, w, s, fmaps=self.fmaps, kernel=self.kernel, demodulate=False, fused_modconv=self.fused_modconv)
-        x += b
+        x += b.astype(x.dtype)
         x = ops.apply_activation(x, activation='linear')
+        if self.clip_conv is not None:
+            x = jnp.clip(x, -self.clip_conv, self.clip_conv)
         if y is not None:
-            x += y
+            x += y.astype(jnp.float32)
         return x
 
 
@@ -360,12 +382,12 @@ class SynthesisBlock(nn.Module):
         lr_multiplier (float): Learning rate multiplier.
         activation (str): Activation function: 'relu', 'lrelu', etc.
         use_noise (bool): If True, add spatial-specific noise.
-        randomize_noise (bool): If True, use random noise. If False, use noise constant from checkpoint.
         resample_kernel (Tuple): Kernel that is used for FIR filter.
         fused_modconv (bool): If True, Perform modulation, convolution, and demodulation as a single fused operation.
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
+        clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed.       
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     res: int
@@ -374,15 +396,15 @@ class SynthesisBlock(nn.Module):
     lr_multiplier: float=1
     activation: str='leaky_relu'
     use_noise: bool=True
-    randomize_noise: bool=True
     resample_kernel: Tuple=(1, 3, 3, 1)
     fused_modconv: bool=False
     param_dict: h5py.Group=None
+    clip_conv: float=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
     @nn.compact
-    def __call__(self, x, y, dlatents_in):
+    def __call__(self, x, y, dlatents_in, noise_mode='random', rng=random.PRNGKey(0)):
         """
         Run Synthesis Block.
 
@@ -390,24 +412,30 @@ class SynthesisBlock(nn.Module):
             x (tensor): Input tensor of shape [N, H, W, C].
             y (tensor): Image of shape [N, H', W', fmaps]. 
             dlatents (tensor): Intermediate latents (W) of shape [N, num_ws, w_dim].
+            noise_mode (str): Noise type.
+                              - 'const': Constant noise.
+                              - 'random': Random noise.
+                              - 'none': No noise.
+            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
+        x = x.astype(self.dtype)
         for i in range(self.num_layers):
             x = SynthesisLayer(fmaps=self.fmaps, 
                                kernel=3,
                                layer_idx=self.res * 2 - (5 - i) if self.res > 2 else 0,
+                               res=self.res,
                                lr_multiplier=self.lr_multiplier,
                                up=i == 0 and self.res != 2,
                                activation=self.activation,
                                use_noise=self.use_noise,
-                               randomize_noise=self.randomize_noise,
                                resample_kernel=self.resample_kernel,
                                fused_modconv=self.fused_modconv,
                                param_dict=self.param_dict[f'layer{i}'] if self.param_dict is not None else None,
                                dtype=self.dtype,
-                               rng=self.rng)(x, dlatents_in)
+                               rng=self.rng)(x, dlatents_in, noise_mode, rng)
 
         if self.num_layers == 2:
             k = ops.setup_filter(self.resample_kernel, gain=2 ** 2)
@@ -416,7 +444,7 @@ class SynthesisBlock(nn.Module):
             pady0 = (k.shape[1] + 1) // 2
             pady1 = (k.shape[1] - 2) // 2
             y = ops.upfirdn2d(y, f=k, up=2, padding=(padx0, padx1, pady0, pady1))
-
+        
         y = ToRGBLayer(fmaps=self.num_channels, 
                        layer_idx=self.res * 2 - 3, 
                        lr_multiplier=self.lr_multiplier,
@@ -444,11 +472,12 @@ class SynthesisNetwork(nn.Module):
         ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
         activation (str): Activation function: 'relu', 'lrelu', etc.
         use_noise (bool): If True, add spatial-specific noise.
-        randomize_noise (bool): If True, use random noise. If False, use noise constant from checkpoint.
         resample_kernel (Tuple): Kernel that is used for FIR filter.
         fused_modconv (bool): If True, Perform modulation, convolution, and demodulation as a single fused operation.
+        num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
+        clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -470,9 +499,10 @@ class SynthesisNetwork(nn.Module):
     # Internal details
     activation: str='leaky_relu'
     use_noise: bool=True
-    randomize_noise: bool=True
     resample_kernel: Tuple=(1, 3, 3, 1)
     fused_modconv: bool=False
+    num_fp16_res: int=0
+    clip_conv: float=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
@@ -486,12 +516,17 @@ class SynthesisNetwork(nn.Module):
             self.resolution_ = RESOLUTION[self.pretrained]
         
     @nn.compact
-    def __call__(self, dlatents_in):
+    def __call__(self, dlatents_in, noise_mode='random', rng=random.PRNGKey(0)):
         """
         Run Synthesis Network.
 
         Args:
             dlatents_in (tensor): Intermediate latents (W) of shape [N, num_ws, w_dim].
+            noise_mode (str): Noise type.
+                              - 'const': Constant noise.
+                              - 'random': Random noise.
+                              - 'none': No noise.
+            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -503,15 +538,17 @@ class SynthesisNetwork(nn.Module):
         num_layers = resolution_log2 * 2 - 2
         
         fmaps = self.fmap_const if self.fmap_const is not None else nf(1)
-
+        
         if self.param_dict_ is None:
-            const = random.normal(self.rng, (1, 4, 4, fmaps))
+            const = random.normal(self.rng, (1, 4, 4, fmaps), dtype=self.dtype)
         else:
-            const = jnp.array(self.param_dict_['const'])
+            const = jnp.array(self.param_dict_['const'], dtype=self.dtype)
         x = self.param(name='const', init_fn=lambda *_ : const)
         x = jnp.repeat(x, repeats=dlatents_in.shape[0], axis=0)
 
         y = None
+
+        dlatents_in = dlatents_in.astype(jnp.float32)
 
         for res in range(2, resolution_log2 + 1):
             x, y = SynthesisBlock(fmaps=nf(res - 1),
@@ -520,12 +557,12 @@ class SynthesisNetwork(nn.Module):
                                   num_channels=self.num_channels,
                                   activation=self.activation,
                                   use_noise=self.use_noise,
-                                  randomize_noise=self.randomize_noise,
                                   resample_kernel=self.resample_kernel,
                                   fused_modconv=self.fused_modconv,
                                   param_dict=self.param_dict_[f'block_{2 ** res}x{2 ** res}'] if self.param_dict_ is not None else None,
-                                  dtype=self.dtype,
-                                  rng=self.rng)(x, y, dlatents_in)
+                                  clip_conv=self.clip_conv,
+                                  dtype=self.dtype if res > resolution_log2 - self.num_fp16_res else 'float32',
+                                  rng=self.rng)(x, y, dlatents_in, noise_mode, rng)
 
         return y
 
@@ -552,14 +589,15 @@ class Generator(nn.Module):
         pretrained (str): Which pretrained model to use, None for random initialization.
         ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
         use_noise (bool): If True, add spatial-specific noise.
-        randomize_noise (bool): If True, use random noise. If False, use noise constant from checkpoint.
         activation (str): Activation function: 'relu', 'lrelu', etc.
         w_avg_beta (float): Decay for tracking the moving average of W during training, None = do not track.
         mapping_lr_multiplier (float): Learning rate multiplier for the mapping network.
         resample_kernel (Tuple): Kernel that is used for FIR filter.
         fused_modconv (bool): If True, Perform modulation, convolution, and demodulation as a single fused operation.
+        num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
+        clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -587,12 +625,13 @@ class Generator(nn.Module):
 
     # Internal details
     use_noise: bool=True
-    randomize_noise: bool=True
     activation: str='leaky_relu'
     w_avg_beta: float=0.995
     mapping_lr_multiplier: float=0.01
     resample_kernel: Tuple=(1, 3, 3, 1)
     fused_modconv: bool=False
+    num_fp16_res: int=0
+    clip_conv: float=None
     dtype: str='float32'
     rng: Any=random.PRNGKey(0)
 
@@ -611,7 +650,7 @@ class Generator(nn.Module):
             self.param_dict = None
        
     @nn.compact
-    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True):
+    def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True, noise_mode='random', rng=random.PRNGKey(0)):
         """
         Run Generator.
 
@@ -622,6 +661,11 @@ class Generator(nn.Module):
             truncation_cutoff (int): Controls truncation. None = disable.
             skip_w_avg_update (bool): If True, updates the exponential moving average of W.
             train (bool): Training mode.
+            noise_mode (str): Noise type.
+                              - 'const': Constant noise.
+                              - 'random': Random noise.
+                              - 'none': No noise.
+            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -651,11 +695,12 @@ class Generator(nn.Module):
                              param_dict=self.param_dict['synthesis_network'] if self.param_dict is not None else None,
                              activation=self.activation,
                              use_noise=self.use_noise,
-                             randomize_noise=self.randomize_noise,
                              resample_kernel=self.resample_kernel,
                              fused_modconv=self.fused_modconv,
+                             num_fp16_res=self.num_fp16_res,
+                             clip_conv=self.clip_conv,
                              dtype=self.dtype,
-                             rng=self.rng)(dlatents_in)
+                             rng=self.rng)(dlatents_in, noise_mode, rng)
 
         return x
 
