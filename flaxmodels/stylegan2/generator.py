@@ -682,7 +682,8 @@ class Generator(nn.Module):
                                      w_avg_beta=self.w_avg_beta,
                                      param_dict=self.param_dict['mapping_network'] if self.param_dict is not None else None,
                                      dtype=self.dtype,
-                                     rng=self.rng)(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update, train)
+                                     rng=self.rng,
+                                     name='mapping_network')(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update, train)
 
         x = SynthesisNetwork(resolution=self.resolution_,
                              num_channels=self.num_channels,
@@ -700,7 +701,8 @@ class Generator(nn.Module):
                              num_fp16_res=self.num_fp16_res,
                              clip_conv=self.clip_conv,
                              dtype=self.dtype,
-                             rng=self.rng)(dlatents_in, noise_mode, rng)
+                             rng=self.rng,
+                             name='synthesis_network')(dlatents_in, noise_mode, rng)
 
         return x
 
