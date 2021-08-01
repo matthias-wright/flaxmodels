@@ -193,7 +193,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 <a name="stylegan2_syn"></a>
 ### SynthesisNetwork
 
-flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', use_noise=True, randomize_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', use_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, num_fp16_res=0, clip_conv=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
 
 #### Attributes
 * **resolution (int)** - Output resolution.
@@ -223,17 +223,23 @@ flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=51
   * 'leaky_relu'
   * 'linear'
 * **use_noise (bool)** - Inject noise in synthesis layers.
-* **randomize_noise (bool)** - Use random noise.
 * **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
 * **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
+* **num_fp16_res (int)** - Use float16 for the 'num_fp16_res' highest resolutions.
+* **clip_conv (float)** - Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
 * **dtype (str)** - Data dtype.
 * **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
-apply(*dlatents_in*)
+apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
 
 ##### Parameters
 * **dlatents_in (jax.numpy.ndarray)** - Latent input W, shape [batch, w_dim].
+* **noise_mode (str)** - Noise type:
+  * 'const': Constant noise.
+  * 'random': Random noise.
+  * 'none': No noise.
+* **rng (jax.random.PRNGKey)** - Random seed for spatialwise noise.
 
 
 <a name="stylegan2_map"></a>
