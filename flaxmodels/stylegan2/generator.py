@@ -438,12 +438,8 @@ class SynthesisBlock(nn.Module):
                                rng=self.rng)(x, dlatents_in, noise_mode, rng)
 
         if self.num_layers == 2:
-            k = ops.setup_filter(self.resample_kernel, gain=2 ** 2)
-            padx0 = (k.shape[0] + 1) // 2
-            padx1 = (k.shape[0] - 2) // 2
-            pady0 = (k.shape[1] + 1) // 2
-            pady1 = (k.shape[1] - 2) // 2
-            y = ops.upfirdn2d(y, f=k, up=2, padding=(padx0, padx1, pady0, pady1))
+            k = ops.setup_filter(self.resample_kernel)
+            y = ops.upsample2d(y, f=k, up=2)
         
         y = ToRGBLayer(fmaps=self.num_channels, 
                        layer_idx=self.res * 2 - 3, 

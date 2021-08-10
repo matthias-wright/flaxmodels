@@ -182,14 +182,42 @@ def upfirdn2d(x, f, padding=(2, 1, 2, 1), up=1, down=1, strides=(1, 1), flip_fil
 
     # convole filter
     f = jnp.repeat(jnp.expand_dims(f, axis=(-2, -1)), repeats=C, axis=-1)
-    x = jax.lax.conv_general_dilated(x,
-                                     f.astype(x.dtype),
-                                     window_strides=strides or (1,) * (x.ndim - 2),
-                                     padding='valid',
-                                     dimension_numbers=nn.linear._conv_dimension_numbers(x.shape),
-                                     feature_group_count=C)
+    if f.ndim == 4:
+        x = jax.lax.conv_general_dilated(x,
+                                         f.astype(x.dtype),
+                                         window_strides=strides or (1,) * (x.ndim - 2),
+                                         padding='valid',
+                                         dimension_numbers=nn.linear._conv_dimension_numbers(x.shape),
+                                         feature_group_count=C)
+    else:
+        x = jax.lax.conv_general_dilated(x,
+                                         jnp.expand_dims(f, axis=0).astype(x.dtype),
+                                         window_strides=strides or (1,) * (x.ndim - 2),
+                                         padding='valid',
+                                         dimension_numbers=nn.linear._conv_dimension_numbers(x.shape),
+                                         feature_group_count=C)
+        x = jax.lax.conv_general_dilated(x,
+                                         jnp.expand_dims(f, axis=1).astype(x.dtype),
+                                         window_strides=strides or (1,) * (x.ndim - 2),
+                                         padding='valid',
+                                         dimension_numbers=nn.linear._conv_dimension_numbers(x.shape),
+                                         feature_group_count=C)
     x = x[:, ::down, ::down]
     return x
+
+
+def upsample2d(x, f, up=2, padding=0, flip_filter=False, gain=1):
+    if f.ndim == 1:
+        fh, fw = f.shape[0], f.shape[0]
+    elif f.ndim == 2:
+        fh, fw = f.shape[0], f.shape[1]
+    else:
+        raise ValueError('Invalid filter shape:', f.shape)
+    padx0 = padding + (fw + up - 1) // 2
+    padx1 = padding + (fw - up) // 2
+    pady0 = padding + (fh + up - 1) // 2
+    pady1 = padding + (fh - up) // 2
+    return upfirdn2d(x, f=f, up=up, padding=(padx0, padx1, pady0, pady1), flip_filter=flip_filter, gain=gain * up * up)
 
 
 #------------------------------------------------------
