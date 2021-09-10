@@ -66,7 +66,7 @@ Similar tests are performed for the other models.
 
 <a name="gpt2_lmhead"></a>
 ### GPT2LMHeadModel
-flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rng=jax.random.PRNGKey(0)*)
+flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None*)
 
 
 #### Attributes
@@ -80,7 +80,7 @@ flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None, rn
 * **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
+apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)*)
 
 
 ##### Parameters
@@ -93,10 +93,11 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
+* **rng (jax.numpy.ndarray)** - Random seed for dropout.
 
 <a name="gpt2_model"></a>
 ### GPT2Model
-flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None, rng=jax.random.PRNGKey(0)*)
+flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_dict=None*)
 
 #### Attributes
 * **config (types.SimpleNamespace)** - Configuration file.
@@ -107,10 +108,10 @@ flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_di
   * 'gpt2-xl'
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **param_dict (dict)** - Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
-* **rng (jax.numpy.ndarray)** - Random seed.
+
 
 #### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
+apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)*)
 
 ##### Parameters
 * **input_ids (jax.numpy.ndarray)** - Input token ids, shape [B, seq_len].
@@ -122,6 +123,7 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
+* **rng (jax.numpy.ndarray)** - Random seed for dropout.
 
 
 <a name="stylegan2"></a>
@@ -175,7 +177,7 @@ flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_di
 * **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
 * **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed.
+* **rng (jax.numpy.ndarray)** - Random seed for noise const initialization.
 
 #### Methods
 apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
@@ -228,7 +230,7 @@ flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=51
 * **num_fp16_res (int)** - Use float16 for the 'num_fp16_res' highest resolutions.
 * **clip_conv (float)** - Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed.
+* **rng (jax.numpy.ndarray)** - Random seed for noise const initialization.
 
 #### Methods
 apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
@@ -244,7 +246,7 @@ apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
 
 <a name="stylegan2_map"></a>
 ### MappingNetwork
-flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, pretrained=None, param_dict=None, ckpt_dir=None, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32')
 
 #### Attributes
 * **z_dim (int)** - Input latent (Z) dimensionality.
@@ -275,7 +277,6 @@ flaxmodels.stylegan2.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_featur
 * **lr_multiplier (float)** - Learning rate multiplier for the mapping layers.
 * **w_avg_beta (float)** - Decay for tracking the moving average of W during training, None = do not track.
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
 apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
@@ -291,7 +292,7 @@ apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=Fa
 
 <a name="stylegan2_discriminator"></a>
 ### Discriminator
-flaxmodels.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], pretrained=None, ckpt_dir=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
+flaxmodels.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], pretrained=None, ckpt_dir=None, dtype='float32'*)
 
 #### Attributes
 * **resolution (int)** - Output resolution.
@@ -328,7 +329,6 @@ flaxmodels.stylegan2.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_
   * 'metfaces': MetFaces dataset, resolution 1024x1024.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed.
 
 #### Methods
 apply(*z, c=None*)
@@ -444,7 +444,7 @@ flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True
 
 <a name="vgg16"></a>
 ### VGG16
-flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0), dtype='float32'*) -> flax.linen.Module
+flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -458,13 +458,12 @@ flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
 * **dtype (str)** - Data type.
 
 
 <a name="vgg19"></a>
 ### VGG19
-flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, rng=jax.random.PRNGKey(0), dtype='float32'*) -> flax.linen.Module
+flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, kernel_init=flax.linen.initializers.lecun_normal(), bias_init=flax.linen.initializers.zeros, ckpt_dir=None, dtype='float32'*) -> flax.linen.Module
 
 #### Parameters
 * **output (str)** - Output of the network. Options:
@@ -478,7 +477,6 @@ flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
 * **dtype (str)** - Data type.
 
 

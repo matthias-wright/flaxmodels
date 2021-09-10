@@ -77,7 +77,6 @@ class MappingNetwork(nn.Module):
         lr_multiplier (float): Learning rate multiplier for the mapping layers.
         w_avg_beta (float): Decay for tracking the moving average of W during training, None = do not track.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     # Dimensionality
     z_dim: int=512
@@ -100,7 +99,6 @@ class MappingNetwork(nn.Module):
     lr_multiplier: float=0.01
     w_avg_beta: float=0.995
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
 
     def setup(self):
         self.embed_features_ = self.embed_features
@@ -157,8 +155,7 @@ class MappingNetwork(nn.Module):
                                 activation='linear',
                                 param_dict=self.param_dict_,
                                 layer_name='label_embedding',
-                                dtype=self.dtype,
-                                rng=self.rng)(c.astype(jnp.float32))
+                                dtype=self.dtype)(c.astype(jnp.float32))
 
             y = ops.normalize_2nd_moment(y)
             x = jnp.concatenate((x, y), axis=1) if x is not None else y
@@ -172,8 +169,7 @@ class MappingNetwork(nn.Module):
                                 activation=self.activation,
                                 param_dict=self.param_dict_,
                                 layer_name=f'fc{i}',
-                                dtype=self.dtype,
-                                rng=self.rng)(x)
+                                dtype=self.dtype)(x)
 
         # Update moving average of W.
         if self.w_avg_beta is not None and train and not skip_w_avg_update:
@@ -212,7 +208,7 @@ class SynthesisLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
+        rng (jax.random.PRNGKey): Random seed for noise const initialization.
     """
     fmaps: int
     kernel: int
@@ -263,8 +259,7 @@ class SynthesisLayer(nn.Module):
                             lr_multiplier=self.lr_multiplier,
                             param_dict=self.param_dict,
                             layer_name='affine',
-                            dtype=self.dtype,
-                            rng=self.rng)(dlatents[:, self.layer_idx])
+                            dtype=self.dtype)(dlatents[:, self.layer_idx])
 
         # Noise variables.
         if self.param_dict is None:
@@ -274,10 +269,10 @@ class SynthesisLayer(nn.Module):
         noise_strength = self.param(name='noise_strength', init_fn=lambda *_ : noise_strength)
 
         # Weight and bias for convolution operation.
-        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng)
-        w = self.param(name='weight', init_fn=lambda *_ : w)
-        b = self.param(name='bias', init_fn=lambda *_ : b)
+        w_init = ops.get_weight_init(self.param_dict, layer_name='conv')
+        b_init = ops.get_bias_init(self.param_dict, layer_name='conv')
+        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
+        b = self.param('bias', b_init, (self.fmaps,))
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
 
@@ -316,7 +311,6 @@ class ToRGBLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     layer_idx: int
@@ -326,7 +320,6 @@ class ToRGBLayer(nn.Module):
     param_dict: h5py.Group=None
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
     
     @nn.compact
     def __call__(self, x, y, dlatents):
@@ -349,14 +342,13 @@ class ToRGBLayer(nn.Module):
                             lr_multiplier=self.lr_multiplier,
                             param_dict=self.param_dict,
                             layer_name='affine',
-                            dtype=self.dtype,
-                            rng=self.rng)(dlatents[:, self.layer_idx])
+                            dtype=self.dtype)(dlatents[:, self.layer_idx])
 
         # Weight and bias for convolution operation.
-        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng)
-        w = self.param(name='weight', init_fn=lambda *_ : w)
-        b = self.param(name='bias', init_fn=lambda *_ : b)
+        w_init = ops.get_weight_init(self.param_dict, layer_name='conv')
+        b_init = ops.get_bias_init(self.param_dict, layer_name='conv')
+        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
+        b = self.param('bias', b_init, (self.fmaps,))
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
         
@@ -387,7 +379,7 @@ class SynthesisBlock(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
+        rng (jax.random.PRNGKey): Random seed for noise const initialization.
     """
     fmaps: int
     res: int
@@ -445,8 +437,7 @@ class SynthesisBlock(nn.Module):
                        layer_idx=self.res * 2 - 3, 
                        lr_multiplier=self.lr_multiplier,
                        param_dict=self.param_dict['torgb'] if self.param_dict is not None else None, 
-                       dtype=self.dtype, 
-                       rng=self.rng)(x, y, dlatents_in)
+                       dtype=self.dtype)(x, y, dlatents_in)
         return x, y
 
 
@@ -473,7 +464,7 @@ class SynthesisNetwork(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for initialization.
+        rng (jax.random.PRNGKey): Random seed for noise const initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -536,10 +527,11 @@ class SynthesisNetwork(nn.Module):
         fmaps = self.fmap_const if self.fmap_const is not None else nf(1)
         
         if self.param_dict_ is None:
-            const = random.normal(self.rng, (1, 4, 4, fmaps), dtype=self.dtype)
+            def const_init(key, shape, dtype=self.dtype):
+                return random.normal(key, shape, dtype=dtype)
         else:
-            const = jnp.array(self.param_dict_['const'], dtype=self.dtype)
-        x = self.param(name='const', init_fn=lambda *_ : const)
+            const_init = lambda *_ : jnp.array(self.param_dict_['const'], dtype=self.dtype)
+        x = self.param('const', const_init, (1, 4, 4, fmaps))
         x = jnp.repeat(x, repeats=dlatents_in.shape[0], axis=0)
 
         y = None
@@ -593,7 +585,7 @@ class Generator(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for initialization.
+        rng (jax.random.PRNGKey): Random seed for noise const initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -678,7 +670,6 @@ class Generator(nn.Module):
                                      w_avg_beta=self.w_avg_beta,
                                      param_dict=self.param_dict['mapping_network'] if self.param_dict is not None else None,
                                      dtype=self.dtype,
-                                     rng=self.rng,
                                      name='mapping_network')(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update, train)
 
         x = SynthesisNetwork(resolution=self.resolution_,

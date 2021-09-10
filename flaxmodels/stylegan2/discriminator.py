@@ -82,7 +82,6 @@ class FromRGBLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     kernel: int=1
@@ -91,7 +90,6 @@ class FromRGBLayer(nn.Module):
     param_dict: h5py.Group=None
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x, y):
@@ -105,11 +103,10 @@ class FromRGBLayer(nn.Module):
         Returns:
             (tensor): Output tensor of shape [N, H, W, out_channels].
         """
-        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'fromrgb', self.rng)
-
-        w = self.param(name='weight', init_fn=lambda *_ : w)
-        b = self.param(name='bias', init_fn=lambda *_ : b)
+        w_init = ops.get_weight_init(self.param_dict, layer_name='fromrgb')
+        b_init = ops.get_bias_init(self.param_dict, layer_name='fromrgb')
+        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
+        b = self.param('bias', b_init, (self.fmaps,))
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
         
@@ -140,7 +137,6 @@ class DiscriminatorLayer(nn.Module):
         lr_multiplier (float): Learning rate multiplier.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     fmaps: int
     kernel: int=3
@@ -153,7 +149,6 @@ class DiscriminatorLayer(nn.Module):
     lr_multiplier: float=1
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x):
@@ -166,16 +161,12 @@ class DiscriminatorLayer(nn.Module):
         Returns:
             (tensor): Output tensor of shape [N, H, W, fmaps].
         """
-        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
-        if self.use_bias:
-            w, b = ops.get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng)
-        else:
-            w = ops.get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng)
-
-        w = self.param(name='weight', init_fn=lambda *_ : w)
+        w_init = ops.get_weight_init(self.param_dict, self.layer_name)
+        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         if self.use_bias:
-            b = self.param(name='bias', init_fn=lambda *_ : b)
+            b_init = ops.get_bias_init(self.param_dict, self.layer_name)
+            b = self.param('bias', b_init, (self.fmaps,))
             b = ops.equalize_lr_bias(b, self.lr_multiplier)
 
         x = x.astype(self.dtype)
@@ -202,7 +193,6 @@ class DiscriminatorBlock(nn.Module):
         nf (Callable): Callable that returns the number of feature maps for a given layer.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     res: int
     kernel: int=3
@@ -214,7 +204,6 @@ class DiscriminatorBlock(nn.Module):
     nf: Callable=None
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x):
@@ -239,8 +228,7 @@ class DiscriminatorBlock(nn.Module):
                                    param_dict=self.param_dict,
                                    lr_multiplier=self.lr_multiplier,
                                    clip_conv=self.clip_conv,
-                                   dtype=self.dtype,
-                                   rng=self.rng)(x)
+                                   dtype=self.dtype)(x)
 
         
         if self.architecture == 'resnet':
@@ -253,8 +241,7 @@ class DiscriminatorBlock(nn.Module):
                                           layer_name='skip',
                                           param_dict=self.param_dict,
                                           lr_multiplier=self.lr_multiplier,
-                                          dtype=self.dtype,
-                                          rng=self.rng)(residual)
+                                          dtype=self.dtype)(residual)
 
             x = (x + residual) * np.sqrt(0.5, dtype=x.dtype)
         return x
@@ -285,7 +272,6 @@ class Discriminator(nn.Module):
         pretrained (str): Use pretrained model, None for random initialization.
         ckpt_dir (str): Directory to which the pretrained weights are downloaded. If None, a temp directory will be used.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     # Input dimensions.
     resolution: int=1024
@@ -315,7 +301,6 @@ class Discriminator(nn.Module):
     ckpt_dir: str=None
     
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
 
     def setup(self):
         self.resolution_ = self.resolution
@@ -361,8 +346,7 @@ class Discriminator(nn.Module):
                                 lr_multiplier=self.mapping_lr_multiplier,
                                 param_dict=self.param_dict,
                                 layer_name='label_embedding',
-                                dtype=self.dtype,
-                                rng=self.rng)(c)
+                                dtype=self.dtype)(c)
         
             c = ops.normalize_2nd_moment(c)
             for i in range(self.mapping_layers):
@@ -371,8 +355,7 @@ class Discriminator(nn.Module):
                                     lr_multiplier=self.mapping_lr_multiplier,
                                     param_dict=self.param_dict,
                                     layer_name=f'fc{i}',
-                                    dtype=self.dtype,
-                                    rng=self.rng)(c)
+                                    dtype=self.dtype)(c)
 
         # Layers for >=8x8 resolutions.
         y = None
@@ -384,8 +367,7 @@ class Discriminator(nn.Module):
                                  activation=self.activation,
                                  param_dict=self.param_dict[res_str] if self.param_dict is not None else None,
                                  clip_conv=self.clip_conv,
-                                 dtype=self.dtype if res >= resolution_log2 + 1 - self.num_fp16_res else 'float32',
-                                 rng=self.rng)(x, y)
+                                 dtype=self.dtype if res >= resolution_log2 + 1 - self.num_fp16_res else 'float32')(x, y)
  
             x = DiscriminatorBlock(res=res,
                                    kernel=3,
@@ -395,8 +377,7 @@ class Discriminator(nn.Module):
                                    architecture=self.architecture_,
                                    nf=nf,
                                    clip_conv=self.clip_conv,
-                                   dtype=self.dtype if res >= resolution_log2 + 1 - self.num_fp16_res else 'float32',
-                                   rng=self.rng)(x)
+                                   dtype=self.dtype if res >= resolution_log2 + 1 - self.num_fp16_res else 'float32')(x)
 
         # Layers for 4x4 resolution.
         dtype = jnp.float32
@@ -410,8 +391,7 @@ class Discriminator(nn.Module):
                                layer_name='conv0',
                                param_dict=self.param_dict['block_4x4'] if self.param_dict is not None else None,
                                clip_conv=self.clip_conv,
-                               dtype=dtype,
-                               rng=self.rng)(x)
+                               dtype=dtype)(x)
 
         # Switch to NCHW so that the pretrained weights still work after reshaping
         x = jnp.transpose(x, axes=(0, 3, 1, 2))
@@ -422,16 +402,14 @@ class Discriminator(nn.Module):
                             activation=self.activation,
                             param_dict=self.param_dict['block_4x4'] if self.param_dict is not None else None,
                             layer_name='fc0',
-                            dtype=dtype,
-                            rng=self.rng)(x)
+                            dtype=dtype)(x)
 
         # Output layer.
         x = ops.LinearLayer(in_features=x.shape[1],
                             out_features=1 if self.c_dim_ == 0 else mapping_fmaps,
                             param_dict=self.param_dict,
                             layer_name='output',
-                            dtype=dtype,
-                            rng=self.rng)(x)
+                            dtype=dtype)(x)
 
         if self.c_dim_ > 0:
             x = jnp.sum(x * c, axis=1, keepdims=True) / jnp.sqrt(mapping_fmaps)
