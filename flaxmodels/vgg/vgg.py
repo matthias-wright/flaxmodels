@@ -71,7 +71,7 @@ class VGG(nn.Module):
                 Batch of input images (RGB format). Images must be in range [0, 1].
                 If 'include_head' is True, the images must be 224x224.
             train (bool): Training mode.
-            rng (jax.numpy.ndarray): Random seed for dropout.
+            rng (jax.numpy.ndarray): Random PRNG for dropout.
 
         Returns:
             If output == 'logits' or output == 'softmax':

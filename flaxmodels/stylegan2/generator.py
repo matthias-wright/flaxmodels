@@ -208,7 +208,7 @@ class SynthesisLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for noise const initialization.
+        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
     """
     fmaps: int
     kernel: int
@@ -244,7 +244,7 @@ class SynthesisLayer(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
+            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
@@ -379,7 +379,7 @@ class SynthesisBlock(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random seed for noise const initialization.
+        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
     """
     fmaps: int
     res: int
@@ -408,7 +408,7 @@ class SynthesisBlock(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
+            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
@@ -464,7 +464,7 @@ class SynthesisNetwork(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for noise const initialization.
+        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -513,7 +513,7 @@ class SynthesisNetwork(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
+            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -585,7 +585,7 @@ class Generator(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random seed for noise const initialization.
+        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -653,7 +653,7 @@ class Generator(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random seed for spatialwise noise.
+            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].

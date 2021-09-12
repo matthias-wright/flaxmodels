@@ -77,7 +77,7 @@ flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None*)
   * 'gpt2-large'
   * 'gpt2-xl'
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
-* **rng (jax.numpy.ndarray)** - Random seed.
+* **rng (jax.numpy.ndarray)** - Random PRNG.
 
 #### Methods
 apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)*)
@@ -93,7 +93,7 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
-* **rng (jax.numpy.ndarray)** - Random seed for dropout.
+* **rng (jax.numpy.ndarray)** - Random PRNG for dropout.
 
 <a name="gpt2_model"></a>
 ### GPT2Model
@@ -123,7 +123,7 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
-* **rng (jax.numpy.ndarray)** - Random seed for dropout.
+* **rng (jax.numpy.ndarray)** - Random PRNG for dropout.
 
 
 <a name="stylegan2"></a>
@@ -177,7 +177,7 @@ flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_di
 * **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
 * **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed for noise const initialization.
+* **rng (jax.numpy.ndarray)** - Random PRNG for noise const initialization.
 
 #### Methods
 apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
@@ -230,7 +230,7 @@ flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=51
 * **num_fp16_res (int)** - Use float16 for the 'num_fp16_res' highest resolutions.
 * **clip_conv (float)** - Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random seed for noise const initialization.
+* **rng (jax.numpy.ndarray)** - Random PRNG for noise const initialization.
 
 #### Methods
 apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
@@ -241,7 +241,7 @@ apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
   * 'const': Constant noise.
   * 'random': Random noise.
   * 'none': No noise.
-* **rng (jax.random.PRNGKey)** - Random seed for spatialwise noise.
+* **rng (jax.random.PRNGKey)** - Random PRNG for spatialwise noise.
 
 
 <a name="stylegan2_map"></a>

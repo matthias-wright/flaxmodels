@@ -51,7 +51,7 @@ class GPT2SelfAttention(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random seed for dropout.
+            rng (jax.random.PRNGKey): PRNG for dropout.
 
         Returns:
             (tensor, Tuple): Output tensor, tuple of keys and values.
@@ -109,7 +109,7 @@ class GPT2MLP(nn.Module):
         Args:
             x (tensor): Input tensor.
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random seed for dropout.
+            rng (jax.random.PRNGKey): Random PRNG for dropout.
         """
         x = ops.linear(self.intermediate_dim, ops.get(self.param_dict, 'c_fc'))(x)
         x = ops.apply_activation(x, activation=self.activation)
@@ -146,7 +146,7 @@ class GPT2Block(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random seed for dropout.
+            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (tensor, Tuple): Output tensor, tuple of keys and values.
@@ -224,7 +224,7 @@ class GPT2Model(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random seed for dropout.
+            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (dict): Dictionary containing 'last_hidden_state', 'past_key_values'.            
@@ -340,7 +340,7 @@ class GPT2LMHeadModel(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random seed for dropout.
+            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (dict): Dictionary containing 'last_hidden_state', 'past_key_values', 'loss', and 'logits'.            
