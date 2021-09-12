@@ -9,10 +9,11 @@
 The goal of this project is to make current deep learning models more easily available for the awesome <a href="https://github.com/google/jax">Jax</a>/<a href="https://github.com/google/flax">Flax</a> ecosystem.
 
 ### Models
-* [GPT2](flaxmodels/gpt2)  
-* [StyleGAN2](flaxmodels/stylegan2)  
-* [ResNet{18, 34, 50, 101, 152}](flaxmodels/resnet)  
-* [VGG{16, 19}](flaxmodels/vgg)  
+* GPT2 [[model](flaxmodels/gpt2)]  
+* StyleGAN2 [[model](flaxmodels/stylegan2)] [[training](training/stylegan2)]  
+* ResNet{18, 34, 50, 101, 152} [[model](flaxmodels/resnet)]  
+* VGG{16, 19} [[model](flaxmodels/vgg)]  
+
 
 ### Example Notebooks to play with on Colab
 * [GPT2](flaxmodels/gpt2/gpt2_demo.ipynb)
