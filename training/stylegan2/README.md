@@ -209,6 +209,7 @@ The implementation is compatible with the pretrained weights from NVIDIA. To gen
 * [NVlabs/stylegan2](https://github.com/NVlabs/stylegan2)
 * [NVlabs/stylegan2-ada](https://github.com/NVlabs/stylegan2-ada)
 * [NVlabs/stylegan2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch)
+* [google/flax/examples](https://github.com/google/flax/tree/main/examples)
 
 
 ## License
