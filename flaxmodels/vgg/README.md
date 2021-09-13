@@ -8,7 +8,8 @@
 * [1. Important Note](#note)
 * [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
-* [4. License](#license)
+* [4. Training](#training)
+* [5. License](#license)
 
 
 <a name="note"></a>
@@ -47,6 +48,10 @@ Usage is equivalent for VGG19.
 ## 3. Documentation
 The documentation can be found [here](../../docs/Documentation.md#vgg).
 
+<a name="training"></a>
+## 4. Training
+If you want to train VGG in Jax/Flax, go [here](https://github.com/matthias-wright/flaxmodels/tree/main/training/vgg).
+
 <a name="license"></a>
-## 4. License
+## 5. License
 <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution License</a>

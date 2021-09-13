@@ -7,7 +7,8 @@
 * [1. Important Note](#note)
 * [2. Basic Usage](#usage)
 * [3. Documentation](#documentation)
-* [4. License](#license)
+* [4. Training](#training)
+* [5. License](#license)
 
 <a name="note"></a>
 ## 1. Important Note
@@ -44,8 +45,12 @@ Usage is equivalent for ResNet34, ResNet50, ResNet101, and Resnet152.
 ## 3. Documentation
 The documentation can be found [here](../../docs/Documentation.md#resnet).
 
+<a name="training"></a>
+## 4. Training
+If you want to train ResNet in Jax/Flax, go [here](https://github.com/matthias-wright/flaxmodels/tree/main/training/resnet).
+
 <a name="license"></a>
-## 4. License
+## 5. License
 <a href="https://opensource.org/licenses/MIT">MIT License</a>
 
 

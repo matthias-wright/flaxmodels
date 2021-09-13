@@ -11,8 +11,8 @@ The goal of this project is to make current deep learning models more easily ava
 ### Models
 * GPT2 [[model](flaxmodels/gpt2)]  
 * StyleGAN2 [[model](flaxmodels/stylegan2)] [[training](training/stylegan2)]  
-* ResNet{18, 34, 50, 101, 152} [[model](flaxmodels/resnet)]  
-* VGG{16, 19} [[model](flaxmodels/vgg)]  
+* ResNet{18, 34, 50, 101, 152} [[model](flaxmodels/resnet)] [[training](training/resnet)]  
+* VGG{16, 19} [[model](flaxmodels/vgg)] [[training](training/vgg)]  
 
 
 ### Example Notebooks to play with on Colab
