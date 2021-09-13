@@ -8,19 +8,9 @@
 ##### Table of Contents  
 * [1. Basic Usage](#usage)
 * [2. Documentation](#documentation)
-* [3. Models](#models)
-  * [3.1 Metfaces](#metfaces)
-  * [3.2 FFHQ](#ffhq)
-  * [3.3 AFHQ Wild](#afhqwild)
-  * [3.4 AFHQ Dog](#afhqdog)
-  * [3.5 AFHQ Cat](#afhqcat)
-  * [3.6 LSUN Cat](#cat)
-  * [3.7 LSUN Horse](#horse)
-  * [3.8 LSUN Car](#car)
-  * [3.9 BreCaHAD](#brecahad)
-  * [3.10 CIFAR-10](#cifar10)
-  * [3.11 LSUN Church](#church)
-* [4. License](#license)
+* [3. Training](#training)
+* [4. Pretrained Models](#models)
+* [5. License](#license)
 
 
 <a name="usage"></a>
@@ -59,57 +49,49 @@ for i in range(images.shape[0]):
 ## 2. Documentation
 The documentation can be found [here](../../docs/Documentation.md#stylegan2).
 
-<a name="models"></a>
-## 3. Models
+<a name="training"></a>
+## 3. Training
+If you want to train StyleGAN2 in Jax/Flax, go [here](https://github.com/matthias-wright/flaxmodels/tree/main/training/stylegan2).
 
-<a name="metfaces"></a>
-### 3.1 Metfaces
+<a name="models"></a>
+## 4. Pretrained Models
+
+### Metfaces
 <div><img src="images/metfaces.jpg" alt="img" width="700"></div>
 
-<a name="ffhq"></a>
-### 3.2 FFHQ
+### FFHQ
 <div><img src="images/ffhq.jpg" alt="img" width="700"></div>
 
-<a name="afhqwild"></a>
-### 3.3 AFHQ Wild
+### AFHQ Wild
 <div><img src="images/afhqwild.jpg" alt="img" width="700"></div>
 
-<a name="afhqdog"></a>
-### 3.4 AFHQ Dog
+### AFHQ Dog
 <div><img src="images/afhqdog.jpg" alt="img" width="700"></div>
 
-<a name="afhqcat"></a>
-### 3.5 AFHQ Cat
+### AFHQ Cat
 <div><img src="images/afhqcat.jpg" alt="img" width="700"></div>
 
-<a name="cat"></a>
-### 3.6 LSUN Cat
+### LSUN Cat
 <div><img src="images/cat.jpg" alt="img" width="700"></div>
 
-<a name="horse"></a>
-### 3.7 LSUN Horse
+### LSUN Horse
 <div><img src="images/horse.jpg" alt="img" width="700"></div>
 
-<a name="car"></a>
-### 3.8 LSUN Car
+### LSUN Car
 <div><img src="images/car.jpg" alt="img" width="700"></div>
 
-<a name="brecahad"></a>
-### 3.9 BreCaHAD
+### BreCaHAD
 <div><img src="images/brecahad.jpg" alt="img" width="700"></div>
 
-<a name="cifar10"></a>
-### 3.10 CIFAR-10
+### CIFAR-10
 <div><img src="images/cifar10.jpg" alt="img" width="700"></div>
 
-<a name="church"></a>
-### 3.11 LSUN Church
+### LSUN Church
 <div><img src="images/church.jpg" alt="img" width="700"></div>
 
 
-
 <a name="license"></a>
-## 4. License
+## 5. License
 <a href="https://nvlabs.github.io/stylegan2/license.html">Nvidia Source Code License-NC</a>
 
 
