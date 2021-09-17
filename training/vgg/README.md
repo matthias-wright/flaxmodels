@@ -22,11 +22,7 @@ You will need Python 3.7 or later.
    > cd flaxmodels/training/vgg
    ```
 3. Install <a href="https://github.com/google/jax#installation">Jax</a> with CUDA.
-4. Install `flaxmodels` package (which contains the VGG models):
-   ```sh
-   > pip install --upgrade git+https://github.com/matthias-wright/flaxmodels.git
-   ```
-5. Install requirements: 
+4. Install requirements: 
    ```sh
    > pip install -r requirements.txt
    ```
