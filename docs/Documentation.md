@@ -359,6 +359,7 @@ flaxmodels.ResNet18(*output='softmax', pretrained='imagenet', kernel_init=flax.l
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
@@ -377,6 +378,7 @@ flaxmodels.ResNet34(*output='softmax', pretrained='imagenet', include_head=True,
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
@@ -395,6 +397,7 @@ flaxmodels.ResNet50(*output='softmax', pretrained='imagenet', include_head=True,
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
@@ -413,6 +416,7 @@ flaxmodels.ResNet101(*output='softmax', pretrained='imagenet', include_head=True
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
@@ -431,6 +435,7 @@ flaxmodels.ResNet152(*output='softmax', pretrained='imagenet', include_head=True
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
@@ -454,6 +459,7 @@ flaxmodels.VGG16(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **include_head (bool)** - If True, include the three fully-connected layers at the top of the network. This option is useful when you want to obtain activations for images whose size is different than 224x224.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
@@ -473,6 +479,7 @@ flaxmodels.VGG19(*output='softmax', pretrained='imagenet', include_head=True, ke
 * **pretrained (str)** - Which pretrained weights to load. Options:
   * 'imagenet': Loads the network parameters trained on ImageNet.
   * None: Parameters of the module are initialized randomly.
+* **normalize (bool)** - If True, the input will be normalized with the ImageNet statistics.
 * **include_head (bool)** - If True, include the three fully-connected layers at the top of the network. This option is useful when you want to obtain activations for images whose size is different than 224x224.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the weights.
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.

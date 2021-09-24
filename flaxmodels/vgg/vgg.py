@@ -27,6 +27,8 @@ class VGG(nn.Module):
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         architecture (str):
             Architecture type:
                 - 'vgg16'
@@ -49,6 +51,7 @@ class VGG(nn.Module):
     """
     output: str='softmax'
     pretrained: str='imagenet'
+    normalize: bool=True
     architecture: str='vgg16'
     include_head: bool=True
     num_classes: int=1000
@@ -88,12 +91,12 @@ class VGG(nn.Module):
         if self.include_head and (x.shape[1] != 224 or x.shape[2] != 224):
             raise ValueError('Wrong argument. If include_head is True, then input image must be of size 224x224.')
 
-        if self.pretrained == 'imagenet':
-            # normalize input
+        if self.normalize:
             mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1).astype(x.dtype)
             std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1).astype(x.dtype)
             x = (x - mean) / std
-            
+
+        if self.pretrained == 'imagenet':
             if self.num_classes != 1000:
                 warnings.warn(f'The user specified parameter \'num_classes\' was set to {self.num_classes} '
                                 'but will be overwritten with 1000 to match the specified pretrained checkpoint \'imagenet\', if ', UserWarning)
@@ -162,6 +165,7 @@ class VGG(nn.Module):
 
 def VGG16(output='softmax',
           pretrained='imagenet',
+          normalize=True,
           include_head=True,
           num_classes=1000,
           kernel_init=nn.initializers.lecun_normal(),
@@ -186,6 +190,8 @@ def VGG16(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         include_head (bool):
             If True, include the three fully-connected layers at the top of the network.
             This option is useful when you want to obtain activations for images whose
@@ -207,6 +213,7 @@ def VGG16(output='softmax',
     """
     return VGG(output=output,
                pretrained=pretrained,
+               normalize=normalize,
                architecture='vgg16',
                include_head=include_head,
                num_classes=num_classes,
@@ -218,6 +225,7 @@ def VGG16(output='softmax',
 
 def VGG19(output='softmax',
           pretrained='imagenet',
+          normalize=True,
           include_head=True,
           num_classes=1000,
           kernel_init=nn.initializers.lecun_normal(),
@@ -242,6 +250,8 @@ def VGG19(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         include_head (bool):
             If True, include the three fully-connected layers at the top of the network.
             This option is useful when you want to obtain activations for images whose
@@ -263,6 +273,7 @@ def VGG19(output='softmax',
     """
     return VGG(output=output,
                pretrained=pretrained,
+               normalize=normalize,
                architecture='vgg19',
                include_head=include_head,
                num_classes=num_classes,

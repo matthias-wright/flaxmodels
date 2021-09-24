@@ -14,7 +14,7 @@
 
 <a name="note"></a>
 ## 1. Important Note
-Images must be in range [0, 1]. If the pretrained ImageNet weights are selected, the images are internally normalized with the ImageNet mean and standard deviation.
+Images must be in range [0, 1]. If the pretrained ImageNet weights are selected, the images are internally normalized with the ImageNet mean and standard deviation. If you don't want the images to be normalized, use `normalize=False` (see [here](https://github.com/matthias-wright/flaxmodels/blob/main/docs/Documentation.md#34-vgg16-19) for details).
 
 <a name="usage"></a>
 ## 2. Basic Usage

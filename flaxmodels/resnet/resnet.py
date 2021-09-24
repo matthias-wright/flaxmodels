@@ -238,6 +238,8 @@ class ResNet(nn.Module):
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         architecture (str): 
             Which ResNet model to use:
                 - 'resnet18'
@@ -263,6 +265,7 @@ class ResNet(nn.Module):
     """
     output: str='softmax'
     pretrained: str='imagenet'
+    normalize: bool=True
     architecture: str='resnet18'
     num_classes: int=1000
     block: nn.Module=BasicBlock
@@ -290,13 +293,13 @@ class ResNet(nn.Module):
                 (tensor): Output tensor of shape [N, num_classes].
             If output == 'activations':
                 (dict): Dictionary of activations.
-        """     
-        if self.pretrained == 'imagenet':
-            # normalize input
+        """
+        if self.normalize:
             mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1).astype(x.dtype)
             std = jnp.array([0.229, 0.224, 0.225]).reshape(1, 1, 1, -1).astype(x.dtype)
             x = (x - mean) / std
-            
+
+        if self.pretrained == 'imagenet':
             if self.num_classes != 1000:
                 warnings.warn(f'The user specified parameter \'num_classes\' was set to {self.num_classes} '
                                 'but will be overwritten with 1000 to match the specified pretrained checkpoint \'imagenet\', if ', UserWarning)
@@ -385,6 +388,7 @@ class ResNet(nn.Module):
 
 def ResNet18(output='softmax',
              pretrained='imagenet',
+             normalize=True,
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
@@ -408,6 +412,8 @@ def ResNet18(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         num_classes (int):
             Number of classes.
         kernel_init (function):
@@ -425,6 +431,7 @@ def ResNet18(output='softmax',
     """
     return ResNet(output=output,
                   pretrained=pretrained,
+                  normalize=normalize,
                   architecture='resnet18',
                   num_classes=num_classes,
                   block=BasicBlock,
@@ -436,6 +443,7 @@ def ResNet18(output='softmax',
 
 def ResNet34(output='softmax',
              pretrained='imagenet',
+             normalize=True,
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
@@ -459,6 +467,8 @@ def ResNet34(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         num_classes (int):
             Number of classes.
         kernel_init (function):
@@ -476,6 +486,7 @@ def ResNet34(output='softmax',
     """
     return ResNet(output=output,
                   pretrained=pretrained,
+                  normalize=normalize,
                   architecture='resnet34',
                   num_classes=num_classes,
                   block=BasicBlock,
@@ -487,6 +498,7 @@ def ResNet34(output='softmax',
 
 def ResNet50(output='softmax',
              pretrained='imagenet',
+             normalize=True,
              num_classes=1000,
              kernel_init=nn.initializers.lecun_normal(),
              bias_init=nn.initializers.zeros,
@@ -510,6 +522,8 @@ def ResNet50(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         num_classes (int):
             Number of classes.
         kernel_init (function):
@@ -527,6 +541,7 @@ def ResNet50(output='softmax',
     """
     return ResNet(output=output,
                   pretrained=pretrained,
+                  normalize=normalize,
                   architecture='resnet50',
                   num_classes=num_classes,
                   block=Bottleneck,
@@ -538,6 +553,7 @@ def ResNet50(output='softmax',
 
 def ResNet101(output='softmax',
               pretrained='imagenet',
+              normalize=True,
               num_classes=1000,
               kernel_init=nn.initializers.lecun_normal(),
               bias_init=nn.initializers.zeros,
@@ -561,6 +577,8 @@ def ResNet101(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         num_classes (int):
             Number of classes.
         kernel_init (function):
@@ -578,6 +596,7 @@ def ResNet101(output='softmax',
     """
     return ResNet(output=output,
                   pretrained=pretrained,
+                  normalize=normalize,
                   architecture='resnet101',
                   num_classes=num_classes,
                   block=Bottleneck,
@@ -589,6 +608,7 @@ def ResNet101(output='softmax',
 
 def ResNet152(output='softmax',
               pretrained='imagenet',
+              normalize=True,
               num_classes=1000,
               kernel_init=nn.initializers.lecun_normal(),
               bias_init=nn.initializers.zeros,
@@ -612,6 +632,8 @@ def ResNet152(output='softmax',
             Indicates if and what type of weights to load. Options are:
                 - 'imagenet': Loads the network parameters trained on ImageNet
                 - None: Parameters of the module are initialized randomly
+        normalize (bool):
+            If True, the input will be normalized with the ImageNet statistics.
         num_classes (int):
             Number of classes.
         kernel_init (function):
@@ -629,6 +651,7 @@ def ResNet152(output='softmax',
     """
     return ResNet(output=output,
                   pretrained=pretrained,
+                  normalize=normalize,
                   architecture='resnet152',
                   num_classes=num_classes,
                   block=Bottleneck,
