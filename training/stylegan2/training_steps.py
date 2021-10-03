@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import functools
 
 
-def main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, rng):
+def main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, mixing_prob, rng):
 
     def loss_fn(params):
         w_latent1, new_state_G = state_G.apply_mapping({'params': params['mapping'], 'moving_stats': state_G.moving_stats},
@@ -14,12 +14,21 @@ def main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, 
                                           z_latent2,
                                           batch['label'],
                                           skip_w_avg_update=True)
-        
-        w_latent = jax.ops.index_update(w_latent1, jax.ops.index[:, cutoff:], w_latent2[:, cutoff:])
+
+        # style mixing
+        cutoff_rng, layer_select_rng, synth_rng = jax.random.split(rng, num=3)
+        num_layers = w_latent1.shape[1]
+        layer_idx = jnp.arange(num_layers)[jnp.newaxis, :, jnp.newaxis]
+        mixing_cutoff = jax.lax.cond(jax.random.uniform(cutoff_rng, (), minval=0.0, maxval=1.0) < mixing_prob,
+                                     lambda _: jax.random.randint(layer_select_rng, (), 1, num_layers, dtype=jnp.int32),
+                                     lambda _: num_layers,
+                                     operand=None)
+        mixing_cond = jnp.broadcast_to(layer_idx < mixing_cutoff, w_latent1.shape)
+        w_latent = jnp.where(mixing_cond, w_latent1, w_latent2)
 
         image_gen = state_G.apply_synthesis({'params': params['synthesis'], 'noise_consts': state_G.noise_consts},
                                             w_latent,
-                                            rng=rng)
+                                            rng=synth_rng)
 
         fake_logits = state_D.apply_fn(state_D.params, image_gen, batch['label'])
         loss = jnp.mean(jax.nn.softplus(-fake_logits)) 
@@ -102,7 +111,7 @@ def regul_step_G(state_G, batch, z_latent, pl_noise, pl_mean, metrics, config, r
     return new_state_G, metrics, pl_mean_new
 
 
-def main_step_D(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, rng):
+def main_step_D(state_G, state_D, batch, z_latent1, z_latent2, metrics, mixing_prob, rng):
 
     def loss_fn(params):
         w_latent1 = state_G.apply_mapping({'params': state_G.params['mapping'], 'moving_stats': state_G.moving_stats},
@@ -115,11 +124,20 @@ def main_step_D(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, 
                                           batch['label'],
                                           train=False)
         
-        w_latent = jax.ops.index_update(w_latent1, jax.ops.index[:, cutoff:], w_latent2[:, cutoff:])
+        # style mixing
+        cutoff_rng, layer_select_rng, synth_rng = jax.random.split(rng, num=3)
+        num_layers = w_latent1.shape[1]
+        layer_idx = jnp.arange(num_layers)[jnp.newaxis, :, jnp.newaxis]
+        mixing_cutoff = jax.lax.cond(jax.random.uniform(cutoff_rng, (), minval=0.0, maxval=1.0) < mixing_prob,
+                                     lambda _: jax.random.randint(layer_select_rng, (), 1, num_layers, dtype=jnp.int32),
+                                     lambda _: num_layers,
+                                     operand=None)
+        mixing_cond = jnp.broadcast_to(layer_idx < mixing_cutoff, w_latent1.shape)
+        w_latent = jnp.where(mixing_cond, w_latent1, w_latent2)
 
         image_gen = state_G.apply_synthesis({'params': state_G.params['synthesis'], 'noise_consts': state_G.noise_consts},
                                             w_latent,
-                                            rng=rng)
+                                            rng=synth_rng)
 
         fake_logits = state_D.apply_fn(params, image_gen, batch['label'])
         real_logits = state_D.apply_fn(params, batch['image'], batch['label'])

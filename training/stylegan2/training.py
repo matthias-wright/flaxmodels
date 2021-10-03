@@ -65,7 +65,6 @@ def train_and_evaluate(config):
     # Initialize Models
     #--------------------------------------
     print('Initialize models...')
-    rng, init_rng = jax.random.split(rng)
     
     # Generator initialization for training
     mapping_net = fm.stylegan2.MappingNetwork(z_dim=config.z_dim,
@@ -83,6 +82,7 @@ def train_and_evaluate(config):
                                                   clip_conv=clip_conv,
                                                   dtype=dtype)
 
+    rng, init_rng = jax.random.split(rng)
     mapping_net_vars = mapping_net.init(init_rng,
                                         jnp.ones((1, config.z_dim)),
                                         jnp.ones((1, config.c_dim)))
@@ -104,6 +104,7 @@ def train_and_evaluate(config):
                                                num_fp16_res=num_fp16_res,
                                                clip_conv=clip_conv,
                                                dtype=dtype)
+    rng, init_rng = jax.random.split(rng)
     params_D = discriminator.init(init_rng,
                                   jnp.ones((1, config.resolution, config.resolution, config.img_channels)),
                                   jnp.ones((1, config.c_dim)))
@@ -150,7 +151,8 @@ def train_and_evaluate(config):
                                                 dynamic_scale_main=dynamic_scale_D_main,
                                                 dynamic_scale_reg=dynamic_scale_D_reg,
                                                 epoch=0)
- 
+    
+    # Copy over the parameters from the training generator to the ema generator
     params_ema_G = training_utils.update_generator_ema(state_G, params_ema_G, config, ema_beta=0)
 
     # Running mean of path length for path length regularization
@@ -185,10 +187,10 @@ def train_and_evaluate(config):
     # Precompile train and eval steps
     #--------------------------------------
     print('Precompile training steps...')
-    p_main_step_G = jax.pmap(training_steps.main_step_G, static_broadcasted_argnums=6, axis_name='batch')
+    p_main_step_G = jax.pmap(training_steps.main_step_G, axis_name='batch')
     p_regul_step_G = jax.pmap(functools.partial(training_steps.regul_step_G, config=config), axis_name='batch')
 
-    p_main_step_D = jax.pmap(training_steps.main_step_D, static_broadcasted_argnums=6, axis_name='batch')
+    p_main_step_D = jax.pmap(training_steps.main_step_D, axis_name='batch')
     p_regul_step_D = jax.pmap(functools.partial(training_steps.regul_step_D, config=config), axis_name='batch')
     
     #--------------------------------------
@@ -216,26 +218,25 @@ def train_and_evaluate(config):
 
             rng, key = jax.random.split(rng)
             z_latent2 = jax.random.normal(key, (num_devices, config.batch_size, config.z_dim), dtype)
-            cutoff = np.random.randint(low=1, high=mapping_net.num_ws)
-            cutoff = cutoff if np.random.uniform() < config.mixing_prob else mapping_net.num_ws
 
-            rng, key = jax.random.split(rng)
-            # Replicate rng across devices for update steps
-            rkey = flax.jax_utils.replicate(key)
+            # Split PRNGs across devices
+            rkey = jax.random.split(key, num=num_devices)
+            mixing_prob = flax.jax_utils.replicate(config.mixing_prob)
 
             #--------------------------------------
             # Update Discriminator
             #--------------------------------------
-            state_D, metrics = p_main_step_D(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, rkey)
+            state_D, metrics = p_main_step_D(state_G, state_D, batch, z_latent1, z_latent2, metrics, mixing_prob, rkey)
             if step % config.D_reg_interval == 0:
                 state_D, metrics = p_regul_step_D(state_D, batch, metrics)
 
             #--------------------------------------
             # Update Generator
             #--------------------------------------
-            state_G, metrics = p_main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, cutoff, rkey)
+            state_G, metrics = p_main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, mixing_prob, rkey)
             if step % config.G_reg_interval == 0:
                 H, W = batch['image'].shape[1], batch['image'].shape[2]
+                rng, key = jax.random.split(rng)
                 pl_noise = jax.random.normal(key, batch['image'].shape, dtype=dtype) / np.sqrt(H * W)
                 state_G, metrics, pl_mean = p_regul_step_G(state_G, batch, z_latent1, pl_noise, pl_mean, metrics, rng=rkey)
 

@@ -145,16 +145,6 @@ I have implemented all the mixed precision tricks from the original StyleGAN2 im
 Dynamic loss scaling is also implemented with [flax.optim.DynamicScale](https://flax.readthedocs.io/en/latest/_autosummary/flax.optim.DynamicScale.html).  
 I will look into it. If you figure it out, you are more than welcome to submit a PR.
 
-### A Note on GPU Utilization
-At the beginning of the training, the GPU utilization will be low. It will be 0% for a couple of seconds and then spike up to around 90% or 100% for a second.  
-This is completely normal and will only last for around 10-30 minutes, depending on your hardware. The reason for this is the style mixing regularization. During training, we run two latent noise codes z_1 and z_2 through the mapping network to obtain two intermediate latent codes w_1 and w_2. We then combine w_1 and w_2 into a single intermediate latent code w such that w_1 controls the style of the layers before the crossover point and w_2 controls the style of the layers after the crossover point. The crossover point is chosen randomly for each training step and can be at every layer.  
-This is implemented by passing z_1, z_2 and the index of the crossover point to the update steps and then creating w as follows:
-```python
-w_latent = jax.ops.index_update(w_latent1, jax.ops.index[:, cutoff:], w_latent2[:, cutoff:])
-```
-However, this operation creates tensors with argument-value dependent shapes. Since the training steps are pre-compiled with `jax.pmap`, the training steps need to be compiled for each unique crossover point. The [Jax docs](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html) have more information on this.  
-The good news is that even at resolution 1024x1024 there are only 17 unique crossover indices. Once the training steps have been compiled for each of them, the GPU utilization will be high without any interruptions.
-
 ## Checkpoints
 I have trained StyleGAN2 from scratch on [FFHQ](https://github.com/NVlabs/ffhq-dataset) and [Danbooru2019 Portraits](https://www.gwern.net/Crops), both at resolution 512x512.
 
@@ -199,6 +189,10 @@ I have trained StyleGAN2 from scratch on [FFHQ](https://github.com/NVlabs/ffhq-d
 
 ## Original Checkpoints
 The implementation is compatible with the pretrained weights from NVIDIA. To generate images in Jax/Flax using the original checkpoints from NVIDIA, go [here](https://github.com/matthias-wright/flaxmodels/tree/main/flaxmodels/stylegan2).
+
+
+## Acknowledgements
+* Thank you to [moabarar](https://github.com/moabarar) for [improving](https://github.com/matthias-wright/flaxmodels/discussions/7) the efficiency of the style mixing regularization.
 
 
 ## References

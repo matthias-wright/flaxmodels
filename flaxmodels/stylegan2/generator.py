@@ -77,6 +77,7 @@ class MappingNetwork(nn.Module):
         lr_multiplier (float): Learning rate multiplier for the mapping layers.
         w_avg_beta (float): Decay for tracking the moving average of W during training, None = do not track.
         dtype (str): Data type.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     # Dimensionality
     z_dim: int=512
@@ -99,6 +100,7 @@ class MappingNetwork(nn.Module):
     lr_multiplier: float=0.01
     w_avg_beta: float=0.995
     dtype: str='float32'
+    rng: Any=random.PRNGKey(0)
 
     def setup(self):
         self.embed_features_ = self.embed_features
@@ -142,6 +144,7 @@ class MappingNetwork(nn.Module):
         Returns:
             (tensor): Intermediate latent W.
         """
+        init_rng = self.rng
         # Embed, normalize, and concat inputs.
         x = None
         if self.z_dim > 0:
@@ -155,13 +158,15 @@ class MappingNetwork(nn.Module):
                                 activation='linear',
                                 param_dict=self.param_dict_,
                                 layer_name='label_embedding',
-                                dtype=self.dtype)(c.astype(jnp.float32))
+                                dtype=self.dtype,
+                                rng=init_rng)(c.astype(jnp.float32))
 
             y = ops.normalize_2nd_moment(y)
             x = jnp.concatenate((x, y), axis=1) if x is not None else y
 
         # Main layers.
         for i in range(self.num_layers_):
+            init_rng, init_key = random.split(init_rng)
             x = ops.LinearLayer(in_features=x.shape[1],
                                 out_features=self.layer_features_,
                                 use_bias=True,
@@ -169,7 +174,8 @@ class MappingNetwork(nn.Module):
                                 activation=self.activation,
                                 param_dict=self.param_dict_,
                                 layer_name=f'fc{i}',
-                                dtype=self.dtype)(x)
+                                dtype=self.dtype,
+                                rng=init_key)(x)
 
         # Update moving average of W.
         if self.w_avg_beta is not None and train and not skip_w_avg_update:
@@ -208,7 +214,7 @@ class SynthesisLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     fmaps: int
     kernel: int
@@ -244,13 +250,14 @@ class SynthesisLayer(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
+            rng (jax.random.PRNGKey): PRNG for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         assert noise_mode in ['const', 'random', 'none']
-
+        
+        linear_rng, conv_rng = random.split(self.rng)
         # Affine transformation to obtain style variable.
         s = ops.LinearLayer(in_features=dlatents[:, self.layer_idx].shape[1],
                             out_features=x.shape[3],
@@ -259,7 +266,8 @@ class SynthesisLayer(nn.Module):
                             lr_multiplier=self.lr_multiplier,
                             param_dict=self.param_dict,
                             layer_name='affine',
-                            dtype=self.dtype)(dlatents[:, self.layer_idx])
+                            dtype=self.dtype,
+                            rng=linear_rng)(dlatents[:, self.layer_idx])
 
         # Noise variables.
         if self.param_dict is None:
@@ -269,10 +277,10 @@ class SynthesisLayer(nn.Module):
         noise_strength = self.param(name='noise_strength', init_fn=lambda *_ : noise_strength)
 
         # Weight and bias for convolution operation.
-        w_init = ops.get_weight_init(self.param_dict, layer_name='conv')
-        b_init = ops.get_bias_init(self.param_dict, layer_name='conv')
-        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
-        b = self.param('bias', b_init, (self.fmaps,))
+        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
+        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', conv_rng)
+        w = self.param(name='weight', init_fn=lambda *_ : w)
+        b = self.param(name='bias', init_fn=lambda *_ : b)
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
 
@@ -311,6 +319,7 @@ class ToRGBLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     fmaps: int
     layer_idx: int
@@ -320,6 +329,7 @@ class ToRGBLayer(nn.Module):
     param_dict: h5py.Group=None
     clip_conv: float=None
     dtype: str='float32'
+    rng: Any=random.PRNGKey(0)
     
     @nn.compact
     def __call__(self, x, y, dlatents):
@@ -342,13 +352,14 @@ class ToRGBLayer(nn.Module):
                             lr_multiplier=self.lr_multiplier,
                             param_dict=self.param_dict,
                             layer_name='affine',
-                            dtype=self.dtype)(dlatents[:, self.layer_idx])
+                            dtype=self.dtype,
+                            rng=self.rng)(dlatents[:, self.layer_idx])
 
         # Weight and bias for convolution operation.
-        w_init = ops.get_weight_init(self.param_dict, layer_name='conv')
-        b_init = ops.get_bias_init(self.param_dict, layer_name='conv')
-        w = self.param('weight', w_init, (self.kernel, self.kernel, x.shape[3], self.fmaps))
-        b = self.param('bias', b_init, (self.fmaps,))
+        w_shape = [self.kernel, self.kernel, x.shape[3], self.fmaps]
+        w, b = ops.get_weight(w_shape, self.lr_multiplier, True, self.param_dict, 'conv', self.rng)
+        w = self.param(name='weight', init_fn=lambda *_ : w)
+        b = self.param(name='bias', init_fn=lambda *_ : b)
         w = ops.equalize_lr_weight(w, self.lr_multiplier)
         b = ops.equalize_lr_bias(b, self.lr_multiplier)
         
@@ -379,7 +390,7 @@ class SynthesisBlock(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters. If not None, 'pretrained' will be ignored.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data dtype.
-        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     fmaps: int
     res: int
@@ -408,13 +419,15 @@ class SynthesisBlock(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
+            rng (jax.random.PRNGKey): PRNG for spatialwise noise.
 
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         x = x.astype(self.dtype)
+        init_rng = self.rng
         for i in range(self.num_layers):
+            init_rng, init_key = random.split(init_rng)
             x = SynthesisLayer(fmaps=self.fmaps, 
                                kernel=3,
                                layer_idx=self.res * 2 - (5 - i) if self.res > 2 else 0,
@@ -427,17 +440,19 @@ class SynthesisBlock(nn.Module):
                                fused_modconv=self.fused_modconv,
                                param_dict=self.param_dict[f'layer{i}'] if self.param_dict is not None else None,
                                dtype=self.dtype,
-                               rng=self.rng)(x, dlatents_in, noise_mode, rng)
+                               rng=init_key)(x, dlatents_in, noise_mode, rng)
 
         if self.num_layers == 2:
             k = ops.setup_filter(self.resample_kernel)
             y = ops.upsample2d(y, f=k, up=2)
         
+        init_rng, init_key = random.split(init_rng)
         y = ToRGBLayer(fmaps=self.num_channels, 
                        layer_idx=self.res * 2 - 3, 
                        lr_multiplier=self.lr_multiplier,
                        param_dict=self.param_dict['torgb'] if self.param_dict is not None else None, 
-                       dtype=self.dtype)(x, y, dlatents_in)
+                       dtype=self.dtype, 
+                       rng=init_key)(x, y, dlatents_in)
         return x, y
 
 
@@ -464,7 +479,7 @@ class SynthesisNetwork(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -513,7 +528,7 @@ class SynthesisNetwork(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
+            rng (jax.random.PRNGKey): PRNG for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -527,18 +542,19 @@ class SynthesisNetwork(nn.Module):
         fmaps = self.fmap_const if self.fmap_const is not None else nf(1)
         
         if self.param_dict_ is None:
-            def const_init(key, shape, dtype=self.dtype):
-                return random.normal(key, shape, dtype=dtype)
+            const = random.normal(self.rng, (1, 4, 4, fmaps), dtype=self.dtype)
         else:
-            const_init = lambda *_ : jnp.array(self.param_dict_['const'], dtype=self.dtype)
-        x = self.param('const', const_init, (1, 4, 4, fmaps))
+            const = jnp.array(self.param_dict_['const'], dtype=self.dtype)
+        x = self.param(name='const', init_fn=lambda *_ : const)
         x = jnp.repeat(x, repeats=dlatents_in.shape[0], axis=0)
 
         y = None
 
         dlatents_in = dlatents_in.astype(jnp.float32)
-
+        
+        init_rng = self.rng
         for res in range(2, resolution_log2 + 1):
+            init_rng, init_key = random.split(init_rng)
             x, y = SynthesisBlock(fmaps=nf(res - 1),
                                   res=res,
                                   num_layers=1 if res == 2 else 2,
@@ -550,7 +566,7 @@ class SynthesisNetwork(nn.Module):
                                   param_dict=self.param_dict_[f'block_{2 ** res}x{2 ** res}'] if self.param_dict_ is not None else None,
                                   clip_conv=self.clip_conv,
                                   dtype=self.dtype if res > resolution_log2 - self.num_fp16_res else 'float32',
-                                  rng=self.rng)(x, y, dlatents_in, noise_mode, rng)
+                                  rng=init_key)(x, y, dlatents_in, noise_mode, rng)
 
         return y
 
@@ -585,7 +601,7 @@ class Generator(nn.Module):
         num_fp16_res (int): Use float16 for the 'num_fp16_res' highest resolutions.
         clip_conv (float): Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
         dtype (str): Data type.
-        rng (jax.random.PRNGKey): Random PRNG for noise const initialization.
+        rng (jax.random.PRNGKey): PRNG for initialization.
     """
     # Dimensionality
     resolution: int=1024
@@ -636,6 +652,7 @@ class Generator(nn.Module):
             self.num_mapping_layers_ = NUM_MAPPING_LAYERS[self.pretrained]
         else:
             self.param_dict = None
+        self.init_rng_mapping, self.init_rng_synthesis = random.split(self.rng)
        
     @nn.compact
     def __call__(self, z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True, noise_mode='random', rng=random.PRNGKey(0)):
@@ -653,7 +670,7 @@ class Generator(nn.Module):
                               - 'const': Constant noise.
                               - 'random': Random noise.
                               - 'none': No noise.
-            rng (jax.random.PRNGKey): Random PRNG for spatialwise noise.
+            rng (jax.random.PRNGKey): PRNG for spatialwise noise.
 
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
@@ -670,6 +687,7 @@ class Generator(nn.Module):
                                      w_avg_beta=self.w_avg_beta,
                                      param_dict=self.param_dict['mapping_network'] if self.param_dict is not None else None,
                                      dtype=self.dtype,
+                                     rng=self.init_rng_mapping,
                                      name='mapping_network')(z, c, truncation_psi, truncation_cutoff, skip_w_avg_update, train)
 
         x = SynthesisNetwork(resolution=self.resolution_,
@@ -688,7 +706,7 @@ class Generator(nn.Module):
                              num_fp16_res=self.num_fp16_res,
                              clip_conv=self.clip_conv,
                              dtype=self.dtype,
-                             rng=self.rng,
+                             rng=self.init_rng_synthesis,
                              name='synthesis_network')(dlatents_in, noise_mode, rng)
 
         return x

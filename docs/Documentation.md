@@ -177,7 +177,7 @@ flaxmodels.stylegan2.Generator(*resolution=1024, num_channels=3, z_dim=512, c_di
 * **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
 * **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random PRNG for noise const initialization.
+* **rng (jax.numpy.ndarray)** - PRNG for initialization.
 
 #### Methods
 apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
@@ -230,7 +230,7 @@ flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=51
 * **num_fp16_res (int)** - Use float16 for the 'num_fp16_res' highest resolutions.
 * **clip_conv (float)** - Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
 * **dtype (str)** - Data dtype.
-* **rng (jax.numpy.ndarray)** - Random PRNG for noise const initialization.
+* **rng (jax.numpy.ndarray)** - PRNG for initialization.
 
 #### Methods
 apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)

@@ -60,22 +60,16 @@ def apply_activation(x, activation='linear', alpha=0.2, gain=np.sqrt(2)):
 #------------------------------------------------------
 # Weights 
 #------------------------------------------------------
-def get_weight_init(param_dict=None, layer_name=''):
+def get_weight(shape, lr_multiplier=1, bias=True, param_dict=None, layer_name='', key=None):
     if param_dict is None:
-        def init(key, shape, dtype=jnp.float32):
-            return random.normal(key, shape=shape, dtype=dtype)
+        w = random.normal(key, shape=shape, dtype=jnp.float32) / lr_multiplier
+        if bias: b = jnp.zeros(shape=(shape[-1],), dtype=jnp.float32)
     else:
-        init = lambda *_ : jnp.array(param_dict[layer_name]['weight']).astype(jnp.float32)
-    return init
-
-
-def get_bias_init(param_dict=None, layer_name=''):
-    if param_dict is None:
-        def init(_, shape, dtype=jnp.float32):
-            return jnp.zeros(shape=(shape[-1],), dtype=dtype)
-    else:
-        init = lambda *_ : jnp.array(param_dict[layer_name]['bias']).astype(jnp.float32)
-    return init
+        w = jnp.array(param_dict[layer_name]['weight']).astype(jnp.float32)
+        if bias: b = jnp.array(param_dict[layer_name]['bias']).astype(jnp.float32)
+    
+    if bias: return w, b
+    return w
 
 
 def equalize_lr_weight(w, lr_multiplier=1):
@@ -243,6 +237,7 @@ class LinearLayer(nn.Module):
         param_dict (h5py.Group): Parameter dict with pretrained parameters.
         layer_name (str): Layer name.
         dtype (str): Data type.
+        rng (jax.random.PRNGKey): Random seed for initialization.
     """
     in_features: int
     out_features: int
@@ -253,6 +248,7 @@ class LinearLayer(nn.Module):
     param_dict: h5py.Group=None
     layer_name: str=None
     dtype: str='float32'
+    rng: Any=random.PRNGKey(0)
 
     @nn.compact
     def __call__(self, x):
@@ -265,14 +261,20 @@ class LinearLayer(nn.Module):
         Returns:
             (tensor): Output tensor of shape [N, out_features].
         """
-        w_init = get_weight_init(self.param_dict, self.layer_name)
-        w = self.param('weight', w_init, (self.in_features, self.out_features))
+        w_shape = [self.in_features, self.out_features]
+        params = get_weight(w_shape, self.lr_multiplier, self.use_bias, self.param_dict, self.layer_name, self.rng)
+
+        if self.use_bias:
+            w, b = params
+        else:
+            w = params
+
+        w = self.param(name='weight', init_fn=lambda *_ : w)
         w = equalize_lr_weight(w, self.lr_multiplier)
         x = jnp.matmul(x, w.astype(x.dtype))
 
         if self.use_bias:
-            b_init = get_bias_init(self.param_dict, self.layer_name)
-            b = self.param('bias', b_init, (self.out_features,))
+            b = self.param(name='bias', init_fn=lambda *_ : b)
             b = equalize_lr_bias(b, self.lr_multiplier)
             x += b.astype(x.dtype)
             x += self.bias_init

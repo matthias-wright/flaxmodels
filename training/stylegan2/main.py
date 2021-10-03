@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--resume', action='store_true', help='Resume training from latest checkpoint.')
     parser.add_argument('--num_epochs', type=int, default=10000, help='Number of epochs.')
     parser.add_argument('--learning_rate', type=float, default=0.002, help='Learning rate.')
-    parser.add_argument('--batch_size', type=int, default=128, help='Batch size.')
+    parser.add_argument('--batch_size', type=int, default=8, help='Batch size.')
     parser.add_argument('--num_prefetch', type=int, default=2, help='Number of prefetched examples for the data pipeline.')
     parser.add_argument('--resolution', type=int, default=128, help='Image resolution. Must be a multiple of 2.')
     parser.add_argument('--img_channels', type=int, default=3, help='Number of image channels.')
