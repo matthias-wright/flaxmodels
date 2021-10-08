@@ -7,7 +7,7 @@ from flax.linen.module import merge_param
 import flax.linen as nn
 from typing import Callable, Iterable, Optional, Tuple, Union, Any
 import functools
-import pickle
+import pickle5 as pickle
 from . import utils
 
 PRNGKey = Any
