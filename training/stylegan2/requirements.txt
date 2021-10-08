@@ -8,3 +8,4 @@ argparse
 wandb
 tqdm
 dill
+pickle5
