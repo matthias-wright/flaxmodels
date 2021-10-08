@@ -250,7 +250,7 @@ def train_and_evaluate(config):
             if step % config.save_every == 0 and config.disable_fid:
                 # If FID evaluation is disabled, a checkpoint will be saved every 'save_every' steps.
                 if jax.process_index() == 0:
-                    checkpoint.save_checkpoint(config.ckpt_dir, state_G, state_D, params_ema_G, pl_mean, step, epoch)
+                    checkpoint.save_checkpoint(config.ckpt_dir, state_G, state_D, params_ema_G, pl_mean, config, step, epoch)
 
             if step % config.eval_fid_every == 0 and not config.disable_fid:
                 # If FID evaluation is enabled, only save a checkpoint if FID score is better.
