@@ -10,6 +10,7 @@ def main():
     # Paths
     parser.add_argument('--work_dir', type=str, default='logging', help='Directory for logging and checkpoints.')
     parser.add_argument('--data_dir', type=str, help='Directory of the dataset.')
+    parser.add_argument('--project', type=str, default='stylegan', help='Name of this project.')
     parser.add_argument('--name', type=str, default='test', help='Name of this experiment.')
     parser.add_argument('--group', type=str, default='default', help='Group name of this experiment (for Weights&Biases).')
     # Training
@@ -57,8 +58,7 @@ def main():
             os.makedirs(args.ckpt_dir)
 
         if args.wandb:
-            wandb.init(entity='matthias-wright',
-                       project='stylegan',
+            wandb.init(project=args.project,
                        group=args.group,
                        config=args,
                        name=args.name,
