@@ -149,6 +149,7 @@ I will look into it. If you figure it out, you are more than welcome to submit a
 I have trained StyleGAN2 from scratch on [FFHQ](https://github.com/NVlabs/ffhq-dataset) and [Danbooru2019 Portraits](https://www.gwern.net/Crops), both at resolution 512x512.
 
 * [FFHQ at 512x512](https://www.dropbox.com/s/qm7ot3k81wlhh6m/ffhq_512x512.pickle?dl=1) (922,1 MB)
+* [FFHQ at 256x256](https://www.dropbox.com/s/db346eqi4ru6h3p/ffhq_256x256.pickle?dl=1) (828,4 MB)
 * [Danbooru2019 Portraits at 512x512](https://www.dropbox.com/s/coqp8jkvu37a1kh/danbooru2019_512x512.pickle?dl=1) (922,1 MB)
 
 
