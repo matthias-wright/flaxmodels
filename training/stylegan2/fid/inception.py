@@ -36,7 +36,7 @@ class InceptionV3(nn.Module):
     pretrained: bool=False
     transform_input: bool=False
     aux_logits: bool=False
-    ckpt_path: str='https://www.dropbox.com/s/xt6zvlvt22dcwck/inception_v3_weights_fid.pickle?dl=1'
+    ckpt_path: str='https://www.dropbox.com/s/0zo4pd6cfwgzem7/inception_v3_weights_fid.pickle?dl=1'
     dtype: str='float32'
 
     def setup(self):
