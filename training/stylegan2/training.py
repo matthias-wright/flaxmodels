@@ -157,12 +157,7 @@ def train_and_evaluate(config):
 
     # Running mean of path length for path length regularization
     pl_mean = jnp.zeros((), dtype=dtype)
-    pl_mean = flax.jax_utils.replicate(pl_mean)
 
-    # Replicate states across devices 
-    state_G = flax.jax_utils.replicate(state_G)
-    state_D = flax.jax_utils.replicate(state_D)
-    
     step = 0
     epoch_offset = 0
     best_fid_score = np.inf
@@ -182,6 +177,10 @@ def train_and_evaluate(config):
             params_ema_G = ckpt['params_ema_G']
             config = ckpt['config']
 
+    # Replicate states across devices 
+    pl_mean = flax.jax_utils.replicate(pl_mean)
+    state_G = flax.jax_utils.replicate(state_G)
+    state_D = flax.jax_utils.replicate(state_D)
     
     #--------------------------------------
     # Precompile train and eval steps
