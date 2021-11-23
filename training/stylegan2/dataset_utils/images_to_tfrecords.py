@@ -55,10 +55,10 @@ def images_to_tfrecords(image_dir, data_dir, has_labels):
 
     def _int64_feature(value):
         return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
+    
+    os.makedirs(data_dir, exist_ok=True)
     writer = tf.io.TFRecordWriter(os.path.join(data_dir, 'dataset.tfrecords'))
 
-    
     num_examples = 0
     num_classes = 0
 
