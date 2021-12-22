@@ -10,6 +10,7 @@
   * [3.2 StyleGAN2](#stylegan2)
   * [3.3 ResNet{18, 34, 50, 101, 152}](#resnet)
   * [3.4 VGG{16, 19}](#vgg)
+  * [3.5 FewShotGanAdaption](#few_shot_gan_adaption)
 
 
 <a name="ckpts"></a>
@@ -485,5 +486,163 @@ flaxmodels.VGG19(*output='softmax', pretrained='imagenet', normalize=True, inclu
 * **kernel_init (callable)** - A function that takes in a shape and returns a tensor for initializing the biases.
 * **ckpt_dir (str)** - The directory to which the pretrained weights are downloaded. Only relevant if a pretrained model is used. If this argument is None, the weights will be saved to a temp directory.
 * **dtype (str)** - Data type.
+
+
+<a name="few_shot_gan_adaption"></a>
+### 3.2 FewShotGanAdaption
+* [Generator](#few_shot_gan_adaption_generator)
+* [SynthesisNetwork](#few_shot_gan_adaption_syn)
+* [MappingNetwork](#stylegan2_map)
+* [Discriminator](#stylegan2_discriminator)
+
+<a name="few_shot_gan_adaption_generator"></a>
+### Generator
+
+flaxmodels.few_shot_gan_adaption.Generator(*resolution=1024, num_channels=3, z_dim=512, c_dim=0, w_dim=512, mapping_layer_features=512, mapping_embed_features=None, num_ws=18, num_mapping_layers=8, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, use_noise=True, randomize_noise=True, activation='leaky_relu', w_avg_beta=0.995, mapping_lr_multiplier=0.01, resample_kernel=[1, 3, 3, 1], fused_modconv=False, dtype='float32', rng=jax.random.PRNGKey(0)*)
+
+#### Attributes
+* **resolution (int)** - Output resolution.
+* **num_channels (int)** - Number of output color channels.
+* **z_dim (int)** - Input latent (W) dimensionality.
+* **c_dim (int)** - Conditioning label (C) dimensionality, 0 = no label.
+* **w_dim (int)** - Input latent (Z) dimensionality.
+* **mapping_layer_features (int)** - Number of intermediate features in the mapping layers, None = same as w_dim.
+* **mapping_embed_features (int)** - Label embedding dimensionality, None = same as w_dim.
+* **num_ws (int)** - Number of intermediate latents to output, None = do not broadcast.
+* **num_mapping_layers (int)** - Number of mapping layers.
+* **fmap_base (int)** - Overall multiplier for the number of feature maps.
+* **fmap_decay (int)** - Log2 feature map reduction when doubling the resolution.
+* **fmap_min (int)** - Minimum number of feature maps in any layer.
+* **fmap_max (int)** - Maximum number of feature maps in any layer.
+* **fmap_const (int)** - Number of feature maps in the constant input layer. None = default.
+* **use_noise (bool)** - Inject noise in synthesis layers.
+* **randomize_noise (bool)** - Use random noise.
+* **activation (str)** - Activation function. Options:
+  * 'relu'
+  * 'leaky_relu'
+  * 'linear'
+* **w_avg_beta (float)** - Decay for tracking the moving average of W during training, None = do not track.
+* **mapping_lr_multiplier (float)** - Learning rate multiplier for mapping network.
+* **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
+* **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
+* **dtype (str)** - Data dtype.
+* **rng (jax.numpy.ndarray)** - PRNG for initialization.
+
+#### Methods
+apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
+
+
+##### Parameters
+* **z (jax.numpy.ndarray)** - Noise inputs, shape [batch, z_dim].
+* **c (jax.numpy.ndarray)** - Conditional input, shape [batch, c_dim].
+* **truncation_psi (float)** - Parameter that controls the linear interpolation for the truncation trick. 1 = no truncation.
+* **truncation_cutoff (int)** - Number of layers for which to apply the truncation trick. None = disable.
+* **skip_w_avg_update (bool)** - Don't update moving average for latent variable w.
+* **train (bool)** - Training mode.
+
+
+<a name="few_shot_gan_adaption_syn"></a>
+### SynthesisNetwork
+
+flaxmodels.few_shot_gan_adaption.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=512, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, fmap_const=None, activation='leaky_relu', use_noise=True, resample_kernel=[1, 3, 3, 1], fused_modconv=False, num_fp16_res=0, clip_conv=None, dtype='float32', rng=jax.random.PRNGKey(0)*)
+
+#### Attributes
+* **resolution (int)** - Output resolution.
+* **num_channels (int)** - Number of output color channels.
+* **w_dim (int)** - Input latent (W) dimensionality.
+* **fmap_base (int)** - Overall multiplier for the number of feature maps.
+* **fmap_decay (int)** - Log2 feature map reduction when doubling the resolution.
+* **fmap_min (int)** - Minimum number of feature maps in any layer.
+* **fmap_max (int)** - Maximum number of feature maps in any layer.
+* **fmap_const (int)** - Number of feature maps in the constant input layer. None = default.
+* **activation (str)** - Activation function. Options:
+  * 'relu'
+  * 'leaky_relu'
+  * 'linear'
+* **use_noise (bool)** - Inject noise in synthesis layers.
+* **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
+* **fused_modconv (bool)** - Implement modulated_conv2d_layer() using grouped convolution?
+* **num_fp16_res (int)** - Use float16 for the 'num_fp16_res' highest resolutions.
+* **clip_conv (float)** - Clip the output of convolution layers to [-clip_conv, +clip_conv], None = disable clipping.
+* **dtype (str)** - Data dtype.
+* **rng (jax.numpy.ndarray)** - PRNG for initialization.
+
+#### Methods
+apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
+
+##### Parameters
+* **dlatents_in (jax.numpy.ndarray)** - Latent input W, shape [batch, w_dim].
+* **noise_mode (str)** - Noise type:
+  * 'const': Constant noise.
+  * 'random': Random noise.
+  * 'none': No noise.
+* **rng (jax.random.PRNGKey)** - Random PRNG for spatialwise noise.
+
+
+<a name="few_shot_gan_adaption_map"></a>
+### MappingNetwork
+flaxmodels.few_shot_gan_adaption.MappingNetwork(*z_dim=512, c_dim=0, w_dim=512, embed_features=None, layer_features=512, num_ws=18, num_layers=8, activation='leaky_relu', lr_multiplier=0.01, w_avg_beta=0.995, dtype='float32')
+
+#### Attributes
+* **z_dim (int)** - Input latent (Z) dimensionality.
+* **c_dim (int)** - Input latent (C) dimensionality, 0 = no label.
+* **w_dim (int)** - Input latent (W) dimensionality.
+* **embed_features (int)** - Label embedding dimensionality, None = same as w_dim.
+* **layer_features (int)** - Number of intermediate features in the mapping layers, None = same as w_dim.
+* **num_ws (int)** - Number of intermediate latents to output, None = do not broadcast.
+* **num_layers (int)** - Number of mapping layers.
+* **activation (str)** - Activation function. Options:
+  * 'relu'
+  * 'leaky_relu'
+  * 'linear'
+* **lr_multiplier (float)** - Learning rate multiplier for the mapping layers.
+* **w_avg_beta (float)** - Decay for tracking the moving average of W during training, None = do not track.
+* **dtype (str)** - Data dtype.
+
+#### Methods
+apply(*z, c=None, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False, train=True*)
+
+##### Parameters
+* **z (jax.numpy.ndarray)** - Noise inputs, shape [batch, z_dim].
+* **c (jax.numpy.ndarray)** - Conditional input, shape [batch, c_dim].
+* **truncation_psi (float)** - Parameter that controls the linear interpolation for the truncation trick. 1 = no truncation.
+* **truncation_cutoff (int)** - Number of layers for which to apply the truncation trick. None = disable.
+* **skip_w_avg_update (bool)** - Don't update moving average for latent variable w.
+* **train (bool)** - Training mode.
+
+
+<a name="few_shot_gan_adaption_discriminator"></a>
+### Discriminator
+flaxmodels.few_shot_gan_adaption.Discriminator(*resolution=3, num_channels=3, c_dim=0, fmap_base=16384, fmap_decay=1, fmap_min=1, fmap_max=512, mapping_layers=0, mapping_fmaps=None, mapping_lr_multiplier=0.1, architecture='resnet', activation='leaky_relu', mbstd_group_size=None, mbstd_num_features=1, resample_kernel=[1, 3, 3, 1], dtype='float32'*)
+
+#### Attributes
+* **resolution (int)** - Output resolution.
+* **num_channels (int)** - Number of output color channels.
+* **c_dim (int)** - Dimensionality of the labels (c), 0 if no labels. Overritten based on dataset.
+* **fmap_base (int)** - Overall multiplier for the number of feature maps.
+* **fmap_decay (int)** - Log2 feature map reduction when doubling the resolution.
+* **fmap_min (int)** - Minimum number of feature maps in any layer.
+* **fmap_max (int)** - Maximum number of feature maps in any layer.
+* **mapping_layers (int)** - Number of additional mapping layers for the conditioning labels.
+* **mapping_fmaps (int)** - Number of activations in the mapping layers, None = default.
+* **mapping_lr_multiplier (int)** - Learning rate multiplier for the mapping layers.
+* **architecture (str)** - Architecture. Options:
+  * 'orig'
+  * 'resnet'
+* **activation (str)** - Activation function. Options:
+  * 'relu'
+  * 'leaky_relu'
+  * 'linear'
+* **mbstd_group_size (int)** - Group size for the minibatch standard deviation layer, None = entire minibatch.
+* **mbstd_num_features (int)** - Number of features for the minibatch standard deviation layer, 0 = disable.
+* **resample_kernel (list or tuple)** - Low-pass filter to apply when resampling activations, None = box filter.
+* **dtype (str)** - Data dtype.
+
+#### Methods
+apply(*z, c=None*)
+
+##### Parameters
+* **z (jax.numpy.ndarray)** - Noise inputs, shape [batch, z_dim].
+* **c (jax.numpy.ndarray)** - Conditional input, shape [batch, c_dim].
 
 

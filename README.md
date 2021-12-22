@@ -15,12 +15,6 @@ The goal of this project is to make current deep learning models more easily ava
 * VGG{16, 19} [[model](flaxmodels/vgg)] [[training](training/vgg)]  
 
 
-### Example Notebooks to play with on Colab
-* [GPT2](flaxmodels/gpt2/gpt2_demo.ipynb)
-* [StyleGAN2](flaxmodels/stylegan2/stylegan2_demo.ipynb)
-* [ResNet](flaxmodels/resnet/resnet_demo.ipynb)
-* [VGG](flaxmodels/vgg/vgg_demo.ipynb)
-
 ### Installation
 You will need Python 3.7 or later.
  
