@@ -8,6 +8,7 @@ This is the training code for the [Jax/Flax implementation](https://github.com/m
 * [Preparing Datasets for Training](#preparing-datasets-for-training)
 * [Training](#training)
 * [Checkpoints](#checkpoints)
+* [Generating Images](#generating-images)
 * [References](#references)
 * [License](#license)
 
@@ -79,6 +80,37 @@ You can disable the FID score evaluation using `--disable_fid`. In that case, a 
 * [Otto Dix](https://www.dropbox.com/s/u1g18nv73uac21m/otto_dix.pickle?dl=1) (357,2 MB)
 * [Rafael](https://www.dropbox.com/s/b8w928s4wffuo2c/raphael.pickle?dl=1) (357,2 MB)
 
+## Generating Images
+```python
+import jax
+import numpy as np
+import dill as pickle
+from PIL import Image
+
+import flaxmodels as fm
+
+ckpt = pickle.load(open('sketches.pickle', 'rb'))
+params = ckpt['params_ema_G']
+
+generator = fm.few_shot_gan_adaption.Generator()
+
+# Seed
+key = jax.random.PRNGKey(0)
+
+# Input noise
+z = jax.random.normal(key, shape=(4, 512))
+
+# Generate images
+images, _ = generator.apply(params, z, truncation_psi=0.5, train=False, noise_mode='const')
+
+# Normalize images to be in range [0, 1]
+images = (images - np.min(images)) / (np.max(images) - np.min(images))
+
+# Save images
+for i in range(images.shape[0]):
+    Image.fromarray(np.uint8(images[i] * 255)).save(f'image_{i}.jpg')
+
+```
 
 ## References
 * [utkarshojha/few-shot-gan-adaptation](https://github.com/utkarshojha/few-shot-gan-adaptation)
