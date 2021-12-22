@@ -16,7 +16,6 @@
 
 <a name="usage"></a>
 ## 1. Basic Usage
-For more usage examples check out this [Colab](few_shot_gan_adaption_demo.ipynb).
 
 ```python
 import jax

@@ -13,6 +13,7 @@ The goal of this project is to make current deep learning models more easily ava
 * StyleGAN2 [[model](flaxmodels/stylegan2)] [[training](training/stylegan2)]  
 * ResNet{18, 34, 50, 101, 152} [[model](flaxmodels/resnet)] [[training](training/resnet)]  
 * VGG{16, 19} [[model](flaxmodels/vgg)] [[training](training/vgg)]  
+* FewShotGanAdaption [[model](flaxmodels/few_shot_gan_adaption)] [[training](training/few_shot_gan_adaption)]  
 
 
 ### Installation
