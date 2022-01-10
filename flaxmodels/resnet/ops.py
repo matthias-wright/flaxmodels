@@ -16,7 +16,7 @@ Dtype = Any
 #---------------------------------------------------------------#
 # Normalization
 #---------------------------------------------------------------#
-def batch_norm(x, train, epsilon=1e-05, momentum=0.1, params=None, dtype='float32'):
+def batch_norm(x, train, epsilon=1e-05, momentum=0.99, params=None, dtype='float32'):
     if params is None:
         x = BatchNorm(epsilon=epsilon,
                       momentum=momentum,
