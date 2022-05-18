@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 from jax.lib import xla_bridge
 import flax
+from flax.optim import dynamic_scale as dynamic_scale_lib
 import flax.linen as nn
 from flax.training import train_state
 from flax.training import common_utils
@@ -60,11 +61,11 @@ class TrainState(train_state.TrainState):
     Attributes:
         batch_stats (Any): Collection used to store an exponential moving
                            average of the batch statistics.
-        dynamic_scale (flax.optim.DynamicScale): Dynamic loss scaling for mixed precision gradients.
+        dynamic_scale (dynamic_scale_lib.DynamicScale): Dynamic loss scaling for mixed precision gradients.
         epoch (int): Current epoch.
     """
     batch_stats: Any
-    dynamic_scale: flax.optim.DynamicScale
+    dynamic_scale: dynamic_scale_lib.DynamicScale
     epoch: int
 
 
@@ -208,7 +209,7 @@ def train_and_evaluate(config):
 
     platform = jax.local_devices()[0].platform
     if config.mixed_precision and platform == 'gpu':
-        dynamic_scale = flax.optim.DynamicScale()
+        dynamic_scale = dynamic_scale_lib.DynamicScale()
     else:
         dynamic_scale = None
 

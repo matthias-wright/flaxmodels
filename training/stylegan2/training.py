@@ -3,6 +3,7 @@ import tensorflow_datasets as tfds
 import jax
 import jax.numpy as jnp
 import flax
+from flax.optim import dynamic_scale as dynamic_scale_lib
 from flax.core import frozen_dict
 import optax
 import numpy as np
@@ -47,10 +48,10 @@ def train_and_evaluate(config):
 
     platform = jax.local_devices()[0].platform
     if config.mixed_precision and platform == 'gpu':
-        dynamic_scale_G_main = flax.optim.DynamicScale()
-        dynamic_scale_D_main = flax.optim.DynamicScale()
-        dynamic_scale_G_reg = flax.optim.DynamicScale()
-        dynamic_scale_D_reg = flax.optim.DynamicScale()
+        dynamic_scale_G_main = dynamic_scale_lib.DynamicScale()
+        dynamic_scale_D_main = dynamic_scale_lib.DynamicScale()
+        dynamic_scale_G_reg = dynamic_scale_lib.DynamicScale()
+        dynamic_scale_D_reg = dynamic_scale_lib.DynamicScale()
         clip_conv = 256
         num_fp16_res = 4
     else:
