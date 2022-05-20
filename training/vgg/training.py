@@ -59,12 +59,9 @@ class TrainState(train_state.TrainState):
     Simple train state for the common case with a single Optax optimizer.
 
     Attributes:
-        batch_stats (Any): Collection used to store an exponential moving
-                           average of the batch statistics.
         dynamic_scale (dynamic_scale_lib.DynamicScale): Dynamic loss scaling for mixed precision gradients.
         epoch (int): Current epoch.
     """
-    batch_stats: Any
     dynamic_scale: dynamic_scale_lib.DynamicScale
     epoch: int
 
@@ -108,14 +105,14 @@ def configure_dataloader(ds, prerocess, num_devices, batch_size):
     return ds
 
 
-def train_step(state, batch):
+def train_step(state, batch, rng):
 
     def loss_fn(params):
-        logits, new_model_state = state.apply_fn({'params': params, 'batch_stats': state.batch_stats},
-                                                 batch['image'],
-                                                 mutable=['batch_stats'])
+        logits = state.apply_fn(params,
+                                batch['image'],
+                                rngs={'dropout': rng})
         loss = cross_entropy_loss(logits, batch['label'])
-        return loss, (new_model_state, logits)
+        return loss, logits
 
     dynamic_scale = state.dynamic_scale
 
@@ -128,10 +125,11 @@ def train_step(state, batch):
         aux, grads = grad_fn(state.params)
         # Re-use same axis_name as in the call to `pmap(...train_step...)` below.
         grads = jax.lax.pmean(grads, axis_name='batch')
-    new_model_state, logits = aux[1]
+
+    logits = aux[1]
     metrics = compute_metrics(logits, batch['label'])
 
-    new_state = state.apply_gradients(grads=grads, batch_stats=new_model_state['batch_stats'])
+    new_state = state.apply_gradients(grads=grads)
     
     if dynamic_scale:
         # if is_fin == False the gradients contain Inf/NaNs and optimizer state and
@@ -148,8 +146,7 @@ def train_step(state, batch):
 
 
 def eval_step(state, batch):
-    variables = {'params': state.params, 'batch_stats': state.batch_stats}
-    logits = state.apply_fn(variables, batch['image'], train=False, mutable=False)
+    logits = state.apply_fn(state.params, batch['image'], train=False, mutable=False)
     return compute_metrics(logits, batch['label'])
 
 
@@ -174,7 +171,7 @@ def train_and_evaluate(config):
 
     def val_prerocess(x):
         x = tf.expand_dims(x, axis=0)
-        x = tf.keras.layers.experimental.preprocessing.CenterCrop(height=config.img_size, width=config.img_size)(x)
+        x = tf.image.random_crop(x, size=(x.shape[0], config.img_size, config.img_size, config.img_channels))
         x = tf.squeeze(x, axis=0)
         x = tf.cast(x, dtype='float32')
         x = (x - 127.5) / 127.5 
@@ -225,8 +222,7 @@ def train_and_evaluate(config):
         model = fm.VGG19(output='log_softmax', pretrained=None, num_classes=config.num_classes, dtype=dtype)
     
     init_rngs = {'params': init_rng, 'dropout': init_rng_dropout}
-    variables = model.init(init_rngs, jnp.ones((1, config.img_size, config.img_size, config.img_channels), dtype=dtype))
-    params, batch_stats = variables['params'], variables['batch_stats']
+    params = model.init(init_rngs, jnp.ones((1, config.img_size, config.img_size, config.img_channels), dtype=dtype))
     
     #--------------------------------------
     # Initialize Optimizer
@@ -244,7 +240,6 @@ def train_and_evaluate(config):
     state = TrainState.create(apply_fn=model.apply,
                               params=params,
                               tx=tx,
-                              batch_stats=batch_stats,
                               dynamic_scale=dynamic_scale,
                               epoch=0)
     
@@ -291,7 +286,9 @@ def train_and_evaluate(config):
             image = jnp.reshape(image, (num_devices, -1) + image.shape[1:])
             label = jnp.reshape(label, (num_devices, -1) + label.shape[1:])
 
-            state, metrics = p_train_step(state, {'image': image, 'label': label})
+            rng, _ = jax.random.split(rng)
+            rngs = jax.random.split(rng, num=num_devices)
+            state, metrics = p_train_step(state, {'image': image, 'label': label}, rng=rngs)
             accuracy += metrics['accuracy']
             n += 1
 

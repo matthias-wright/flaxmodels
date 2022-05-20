@@ -188,7 +188,8 @@ def train_and_evaluate(config):
 
     def val_prerocess(x):
         x = tf.expand_dims(x, axis=0)
-        x = tf.keras.layers.experimental.preprocessing.CenterCrop(height=config.img_size, width=config.img_size)(x)
+        #x = tf.keras.layers.experimental.preprocessing.CenterCrop(height=config.img_size, width=config.img_size)(x)
+        x = tf.image.random_crop(x, size=(x.shape[0], config.img_size, config.img_size, config.img_channels))
         x = tf.squeeze(x, axis=0)
         x = tf.cast(x, dtype='float32')
         x = (x - 127.5) / 127.5
