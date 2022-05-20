@@ -81,7 +81,7 @@ flaxmodels.gpt2.GPT2LMHeadModel(*config=None, pretrained=None, ckpt_dir=None*)
 * **rng (jax.numpy.ndarray)** - Random PRNG.
 
 #### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)*)
+apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
 
 
 ##### Parameters
@@ -94,7 +94,6 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
-* **rng (jax.numpy.ndarray)** - Random PRNG for dropout.
 
 <a name="gpt2_model"></a>
 ### GPT2Model
@@ -112,7 +111,7 @@ flaxmodels.gpt2.GPT2Model(*config=None, pretrained=None, ckpt_dir=None, param_di
 
 
 #### Methods
-apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)*)
+apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, position_ids=None, attn_mask=None, head_mask=None, use_cache=False, training=False*)
 
 ##### Parameters
 * **input_ids (jax.numpy.ndarray)** - Input token ids, shape [B, seq_len].
@@ -124,7 +123,6 @@ apply(*input_ids=None, past_key_values=None, input_embds=None, labels=None, posi
 * **head_mask (jax.numpy.ndarray)** - Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
 * **use_cache (bool)** - If True, keys and values are returned (past_key_values).
 * **training (bool)** - If True, training mode on.
-* **rng (jax.numpy.ndarray)** - Random PRNG for dropout.
 
 
 <a name="stylegan2"></a>

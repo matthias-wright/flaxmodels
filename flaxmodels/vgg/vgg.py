@@ -67,14 +67,13 @@ class VGG(nn.Module):
             self.param_dict = h5py.File(ckpt_file, 'r')
 
     @nn.compact
-    def __call__(self, x, train=True, rng=random.PRNGKey(0)):
+    def __call__(self, x, train=True):
         """
         Args:
             x (tensor of shape [N, H, W, 3]):
                 Batch of input images (RGB format). Images must be in range [0, 1].
                 If 'include_head' is True, the images must be 224x224.
             train (bool): Training mode.
-            rng (jax.numpy.ndarray): Random PRNG for dropout.
 
         Returns:
             If output == 'logits' or output == 'softmax':
@@ -126,9 +125,9 @@ class VGG(nn.Module):
             # NCHW format because weights are from pytorch
             x = jnp.transpose(x, axes=(0, 3, 1, 2))
             x = jnp.reshape(x, (-1, x.shape[1] * x.shape[2] * x.shape[3]))
-            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act, rng=rng, train=train, dtype=self.dtype)
-            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act, rng=rng, train=train, dtype=self.dtype)
-            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act, rng=rng, train=train, dtype=self.dtype)
+            x = self._fc_block(x, features=4096, block_num=6, relu=True, dropout=True, act=act, train=train, dtype=self.dtype)
+            x = self._fc_block(x, features=4096, block_num=7, relu=True, dropout=True, act=act, train=train, dtype=self.dtype)
+            x = self._fc_block(x, features=num_classes, block_num=8, relu=False, dropout=False, act=act, train=train, dtype=self.dtype)
 
         if self.output == 'activations':
             return act 
@@ -150,7 +149,7 @@ class VGG(nn.Module):
             act[f'relu{block_num}_{l + 1}'] = x
         return x
 
-    def _fc_block(self, x, features, block_num, act, rng, relu=False, dropout=False, train=True, dtype='float32'):
+    def _fc_block(self, x, features, block_num, act, relu=False, dropout=False, train=True, dtype='float32'):
         layer_name = f'fc{block_num}'
         w = self.kernel_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['weight']) 
         b = self.bias_init if self.param_dict is None else lambda *_ : jnp.array(self.param_dict[layer_name]['bias']) 
@@ -159,7 +158,7 @@ class VGG(nn.Module):
         if relu:
             x = nn.relu(x)
             act[f'relu{block_num}'] = x
-        if dropout: x = nn.Dropout(rate=0.5)(x, deterministic=not train, rng=rng)
+        if dropout: x = nn.Dropout(rate=0.5)(x, deterministic=not train)
         return x  
 
 

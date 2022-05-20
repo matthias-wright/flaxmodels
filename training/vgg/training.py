@@ -217,14 +217,15 @@ def train_and_evaluate(config):
     #--------------------------------------
     # Initialize Models
     #--------------------------------------
-    rng, init_rng = jax.random.split(rng)
+    rng, init_rng, init_rng_dropout = jax.random.split(rng, num=3)
 
     if config.arch == 'vgg16':
         model = fm.VGG16(output='log_softmax', pretrained=None, num_classes=config.num_classes, dtype=dtype)
     elif config.arch == 'vgg19':
         model = fm.VGG19(output='log_softmax', pretrained=None, num_classes=config.num_classes, dtype=dtype)
-
-    variables = model.init(init_rng, jnp.ones((1, config.img_size, config.img_size, config.img_channels), dtype=dtype))
+    
+    init_rngs = {'params': init_rng, 'dropout': init_rng_dropout}
+    variables = model.init(init_rngs, jnp.ones((1, config.img_size, config.img_size, config.img_channels), dtype=dtype))
     params, batch_stats = variables['params'], variables['batch_stats']
     
     #--------------------------------------
@@ -232,7 +233,6 @@ def train_and_evaluate(config):
     #--------------------------------------
     steps_per_epoch = dataset_size // config.batch_size
 
-    #learning_rate_fn = create_learning_rate_fn(config, config.learning_rate, steps_per_epoch)
 
     learning_rate_fn = lr_schedule.create_cosine_learning_rate_schedule(config.learning_rate,
                                                                         steps_per_epoch,

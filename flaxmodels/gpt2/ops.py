@@ -125,7 +125,7 @@ def merge_heads(x, num_heads, head_dim):
     return x
 
 
-def attention(query, key, value, casual_mask, masked_bias, dropout, scale_attn_weights, rng, training, attn_mask=None, head_mask=None):
+def attention(query, key, value, casual_mask, masked_bias, dropout, scale_attn_weights, training, attn_mask=None, head_mask=None):
     """
     Computes Dot-Product Attention for the given query, key and value.
     
@@ -138,7 +138,6 @@ def attention(query, key, value, casual_mask, masked_bias, dropout, scale_attn_w
         masked_bias (float): Value to insert for masked part of the sequence.
         dropout (nn.Dropout): Dropout module that is applied to the attention output.
         scale_attn_weights (bool): If True, scale the attention weights.
-        rng (jax.random.PRNGKey) Random seed for dropout.
         training (bool): Training mode.
         attn_mask (tensor): Mask to avoid performing attention on padded tokens indices, shape [B, seq_len].
         head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads,] or [num_layers, num_heads].
@@ -161,7 +160,7 @@ def attention(query, key, value, casual_mask, masked_bias, dropout, scale_attn_w
     
     attn_weights = nn.softmax(attn_weights, axis=-1)
     attn_weights = attn_weights.astype(value.dtype)
-    attn_weights = dropout(attn_weights, deterministic=not training, rng=rng)
+    attn_weights = dropout(attn_weights, deterministic=not training)
 
     if head_mask is not None:
         attn_weights = attn_weights * head_mask
@@ -192,7 +191,7 @@ def cross_entropy(logits, labels, ignore_index=-100):
     one_hot_labels = jax.nn.one_hot(labels, num_classes=num_classes)
     mult = one_hot_labels * logits
     # Insert zeros, where the labels are equal to ignore_index
-    jax.ops.index_update(mult, idx=idx, y=jnp.zeros((idx.shape[0], num_classes)))
+    mult = mult.at[idx].set(jnp.zeros((idx.shape[0], num_classes)))
     return -jnp.sum(jnp.sum(mult, axis=-1)) / (batch_size - idx.shape[0])
 
 

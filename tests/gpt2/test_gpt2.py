@@ -12,7 +12,7 @@ def test_reference_output_lm_head_input_ids():
 
     key = jax.random.PRNGKey(0)
     model = fm.gpt2.GPT2LMHeadModel(pretrained='gpt2')
-
+    
     params = model.init(key, input_ids=input_ids, labels=labels)
     output = model.apply(params, input_ids=input_ids, labels=labels)
     logits, loss = output['logits'], output['loss']

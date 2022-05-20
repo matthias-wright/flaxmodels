@@ -11,7 +11,8 @@ def test_output_softmax():
     x = jax.random.uniform(key, shape=(1, 224, 224, 3), minval=0, maxval=1)
 
     vgg19 = fm.VGG19(output='softmax', pretrained=None)
-    params = vgg19.init(key, x)
+    init_rngs = {'params': jax.random.PRNGKey(1), 'dropout': jax.random.PRNGKey(2)}
+    params = vgg19.init(init_rngs, x)
     out = vgg19.apply(params, x, train=False)
 
     assert jnp.min(out) >= 0.0 and jnp.max(out) <= 1.0
@@ -23,7 +24,8 @@ def test_output_activations():
     x = jax.random.uniform(key, shape=(1, 224, 224, 3), minval=0, maxval=1)
 
     vgg19 = fm.VGG19(output='activations', pretrained=None)
-    params = vgg19.init(key, x)
+    init_rngs = {'params': jax.random.PRNGKey(1), 'dropout': jax.random.PRNGKey(2)}
+    params = vgg19.init(init_rngs, x)
     out = vgg19.apply(params, x, train=False)
 
     assert isinstance(out, dict) 
@@ -35,7 +37,8 @@ def test_include_head_true():
     x = jax.random.uniform(key, shape=(1, 224, 224, 3), minval=0, maxval=1)
 
     vgg19 = fm.VGG19(include_head=True, pretrained=None)
-    params = vgg19.init(key, x)
+    init_rngs = {'params': jax.random.PRNGKey(1), 'dropout': jax.random.PRNGKey(2)}
+    params = vgg19.init(init_rngs, x)
     out = vgg19.apply(params, x, train=False)
 
     assert hasattr(out, 'shape') and len(out.shape) == 2 and out.shape[0] == 1 and out.shape[1] == 1000
@@ -47,7 +50,8 @@ def test_include_head_false():
     x = jax.random.uniform(key, shape=(1, 224, 224, 3), minval=0, maxval=1)
 
     vgg19 = fm.VGG19(include_head=False, pretrained=None)
-    params = vgg19.init(key, x)
+    init_rngs = {'params': jax.random.PRNGKey(1), 'dropout': jax.random.PRNGKey(2)}
+    params = vgg19.init(init_rngs, x)
     out = vgg19.apply(params, x, train=False)
 
     assert hasattr(out, 'shape') and len(out.shape) == 4 and out.shape[0] == 1 and out.shape[-1] == 512
@@ -61,7 +65,8 @@ def test_reference_output():
     x = jnp.expand_dims(x, axis=0)
 
     vgg19 = fm.VGG19(output='logits', pretrained='imagenet')
-    params = vgg19.init(key, x)
+    init_rngs = {'params': jax.random.PRNGKey(1), 'dropout': jax.random.PRNGKey(2)}
+    params = vgg19.init(init_rngs, x)
     out = vgg19.apply(params, x, train=False)
     
     out_ref = jnp.load('tests/vgg/aux_files/vgg19_elefant_output_ref.npy')

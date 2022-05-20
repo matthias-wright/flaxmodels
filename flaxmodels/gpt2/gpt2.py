@@ -40,7 +40,7 @@ class GPT2SelfAttention(nn.Module):
         self.scale_attn_weights = self.config.scale_attn_weights
 
     @nn.compact
-    def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)):
+    def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False):
         """
         Run attention.
 
@@ -51,7 +51,6 @@ class GPT2SelfAttention(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): PRNG for dropout.
 
         Returns:
             (tensor, Tuple): Output tensor, tuple of keys and values.
@@ -75,11 +74,10 @@ class GPT2SelfAttention(nn.Module):
         casual_mask = casual_mask.astype(bool)
 
         attn_dropout = nn.Dropout(rate=self.attn_dropout)
-        out, _ = ops.attention(query, key, value, casual_mask, -1e4, attn_dropout, self.scale_attn_weights, rng, training, attn_mask, head_mask)
+        out, _ = ops.attention(query, key, value, casual_mask, -1e4, attn_dropout, self.scale_attn_weights, training, attn_mask, head_mask)
         out = ops.merge_heads(out, self.num_heads, self.head_dim)
         out = ops.linear(self.embd_dim, ops.get(self.param_dict, 'out_proj'))(out)
-        _, rng = jax.random.split(rng)
-        out = nn.Dropout(rate=self.resid_dropout)(out, deterministic=not training, rng=rng)
+        out = nn.Dropout(rate=self.resid_dropout)(out, deterministic=not training)
         return out, present
 
 
@@ -102,19 +100,18 @@ class GPT2MLP(nn.Module):
         self.activation = self.config.activation_function
 
     @nn.compact
-    def __call__(self, x, training=False, rng=jax.random.PRNGKey(0)):
+    def __call__(self, x, training=False):
         """
         Run the MLP.
 
         Args:
             x (tensor): Input tensor.
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random PRNG for dropout.
         """
         x = ops.linear(self.intermediate_dim, ops.get(self.param_dict, 'c_fc'))(x)
         x = ops.apply_activation(x, activation=self.activation)
         x = ops.linear(self.embd_dim, ops.get(self.param_dict, 'c_proj'))(x)
-        x = nn.Dropout(rate=self.resid_dropout)(x, deterministic=not training, rng=rng)
+        x = nn.Dropout(rate=self.resid_dropout)(x, deterministic=not training)
         return x
 
 
@@ -135,7 +132,7 @@ class GPT2Block(nn.Module):
         self.inner_dim = self.config.n_inner if self.config.n_inner is not None else 4 * self.embd_dim
 
     @nn.compact
-    def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False, rng=jax.random.PRNGKey(0)):
+    def __call__(self, x, layer_past=None, attn_mask=None, head_mask=None, use_cache=False, training=False):
         """
         Run the block.
 
@@ -146,7 +143,6 @@ class GPT2Block(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules.
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (tensor, Tuple): Output tensor, tuple of keys and values.
@@ -154,14 +150,13 @@ class GPT2Block(nn.Module):
         residual = x
         x = ops.layer_norm(ops.get(self.param_dict, 'ln_1'), eps=self.eps)(x)
         kwargs = {'layer_past': layer_past, 'attn_mask': attn_mask, 'head_mask': head_mask,
-                'use_cache': use_cache, 'training': training, 'rng': rng}
+                  'use_cache': use_cache, 'training': training}
         x, present = GPT2SelfAttention(self.config, ops.get(self.param_dict, 'attn'))(x, **kwargs)
         x += residual
 
         residual = x
         x = ops.layer_norm(ops.get(self.param_dict, 'ln_2'), eps=self.eps)(x)
-        _, rng = jax.random.split(rng)
-        x = GPT2MLP(self.inner_dim, self.config, ops.get(self.param_dict, 'mlp'))(x, training, rng)
+        x = GPT2MLP(self.inner_dim, self.config, ops.get(self.param_dict, 'mlp'))(x, training)
         x += residual
         return x, present
 
@@ -207,8 +202,7 @@ class GPT2Model(nn.Module):
                  attn_mask=None,
                  head_mask=None,
                  use_cache=False,
-                 training=False,
-                 rng=jax.random.PRNGKey(0)):
+                 training=False):
         """
         Run the model.
 
@@ -224,7 +218,6 @@ class GPT2Model(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (dict): Dictionary containing 'last_hidden_state', 'past_key_values'.            
@@ -268,14 +261,13 @@ class GPT2Model(nn.Module):
         position_embds = ops.embedding(self.max_pos, self.embd_dim, ops.get(self.param_dict_, 'pos_embd'))(position_ids)
         x = input_embds + position_embds
         
-        x = nn.Dropout(rate=self.embd_dropout)(x, deterministic=not training, rng=rng)
+        x = nn.Dropout(rate=self.embd_dropout)(x, deterministic=not training)
         output_shape = input_shape + (x.shape[-1],)
 
         presents = () if use_cache else None
         for i in range(self.num_layers):
             kwargs = {'layer_past': past_key_values[i], 'attn_mask': attn_mask, 'head_mask': head_mask[i],
-                      'use_cache': use_cache, 'training': training, 'rng': rng}
-            _, rng = jax.random.split(rng)
+                      'use_cache': use_cache, 'training': training}
             x, present = GPT2Block(self.config_, ops.get(self.param_dict_, f'block{i}'))(x, **kwargs)
             if use_cache:
                 presents = presents + (present,)
@@ -323,8 +315,7 @@ class GPT2LMHeadModel(nn.Module):
                  attn_mask=None,
                  head_mask=None,
                  use_cache=False,
-                 training=False,
-                 rng=jax.random.PRNGKey(0)):
+                 training=False):
         """
         Run the model.
 
@@ -340,7 +331,6 @@ class GPT2LMHeadModel(nn.Module):
             head_mask (tensor): Mask to nullify selected heads of the self-attention modules, shape [num_heads] or [num_layers, num_heads].
             use_cache (bool): If True, keys and values are returned (past_key_values).
             training (bool): Training mode.
-            rng (jax.random.PRNGKey): Random PRNG for dropout.
 
         Returns:
             (dict): Dictionary containing 'last_hidden_state', 'past_key_values', 'loss', and 'logits'.            
@@ -352,8 +342,7 @@ class GPT2LMHeadModel(nn.Module):
                   'attn_mask': attn_mask, 
                   'head_mask': head_mask,
                   'use_cache': use_cache,
-                  'training': training,
-                  'rng': rng}
+                  'training': training}
         output = GPT2Model(self.config_, param_dict=ops.get(self.param_dict, 'transformer'))(**kwargs)
         lm_logits = ops.linear(self.vocab_size, ops.get(self.param_dict, 'lm_head'), bias=False)(output['last_hidden_state'])
 
