@@ -142,7 +142,7 @@ You can disable the FID score evaluation using `--disable_fid`. In that case, a 
 ### Mixed Precision
 Mixed precision training is implemented and can be activated using `--mixed_precision`. However, at the moment it is not stable so I don't recommend using it until further notice.  
 I have implemented all the mixed precision tricks from the original StyleGAN2 implementation (casting to float32 for some operations, using pre-normalization in the modulated conv layer, only using float16 for the higher resolutions, clipping the output of the convolution layers, etc).  
-Dynamic loss scaling is also implemented with [flax.optim.DynamicScale](https://flax.readthedocs.io/en/latest/_autosummary/flax.optim.DynamicScale.html).  
+Dynamic loss scaling is also implemented with [dynamic_scale_lib.DynamicScale](https://flax.readthedocs.io/en/latest/_autosummary/dynamic_scale_lib.DynamicScale.html).  
 I will look into it. If you figure it out, you are more than welcome to submit a PR.
 
 ## Checkpoints

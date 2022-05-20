@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 from jaxlib.xla_extension import DeviceArray
 import flax
+from flax.optim import dynamic_scale as dynamic_scale_lib
 from flax.core import frozen_dict
 from flax.training import train_state
 from flax import struct
@@ -71,15 +72,15 @@ class TrainStateG(train_state.TrainState):
     Attributes:
         apply_mapping (Callable): Apply function of the Mapping Network.
         apply_synthesis (Callable): Apply function of the Synthesis Network.
-        dynamic_scale (flax.optim.DynamicScale): Dynamic loss scaling for mixed precision gradients.
+        dynamic_scale (dynamic_scale_lib.DynamicScale): Dynamic loss scaling for mixed precision gradients.
         epoch (int): Current epoch.
         moving_stats (Any): Moving average of the latent W. 
         noise_consts (Any): Noise constants from synthesis layers.
     """
     apply_mapping: Callable = struct.field(pytree_node=False)
     apply_synthesis: Callable = struct.field(pytree_node=False)
-    dynamic_scale_main: flax.optim.DynamicScale
-    dynamic_scale_reg: flax.optim.DynamicScale
+    dynamic_scale_main: dynamic_scale_lib.DynamicScale
+    dynamic_scale_reg: dynamic_scale_lib.DynamicScale
     epoch: int
     moving_stats: Any=None
     noise_consts: Any=None
@@ -90,11 +91,11 @@ class TrainStateD(train_state.TrainState):
     Discriminator train state for a single Optax optimizer.
 
     Attributes:
-        dynamic_scale (flax.optim.DynamicScale): Dynamic loss scaling for mixed precision gradients.
+        dynamic_scale (dynamic_scale_lib.DynamicScale): Dynamic loss scaling for mixed precision gradients.
         epoch (int): Current epoch.
     """
-    dynamic_scale_main: flax.optim.DynamicScale
-    dynamic_scale_reg: flax.optim.DynamicScale
+    dynamic_scale_main: dynamic_scale_lib.DynamicScale
+    dynamic_scale_reg: dynamic_scale_lib.DynamicScale
     epoch: int
 
 
