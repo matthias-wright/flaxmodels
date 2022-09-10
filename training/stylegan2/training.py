@@ -101,6 +101,7 @@ def train_and_evaluate(config):
     discriminator = fm.stylegan2.Discriminator(resolution=config.resolution,
                                                num_channels=config.img_channels,
                                                c_dim=config.c_dim,
+                                               fmap_base=config.fmap_base,
                                                mbstd_group_size=config.mbstd_group_size,
                                                num_fp16_res=num_fp16_res,
                                                clip_conv=clip_conv,
