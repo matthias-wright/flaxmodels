@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import flax.linen as nn
 from typing import Any, Tuple, List, Callable
 import h5py
+from dataclasses import  field
 from . import ops
 from .. import utils
 
@@ -91,7 +92,7 @@ class FromRGBLayer(nn.Module):
     param_dict: h5py.Group=None
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
     def __call__(self, x, y):
@@ -153,7 +154,7 @@ class DiscriminatorLayer(nn.Module):
     lr_multiplier: float=1
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
     def __call__(self, x):
@@ -214,7 +215,7 @@ class DiscriminatorBlock(nn.Module):
     nf: Callable=None
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
     def __call__(self, x):
@@ -318,7 +319,7 @@ class Discriminator(nn.Module):
     ckpt_dir: str=None
     
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     def setup(self):
         self.resolution_ = self.resolution

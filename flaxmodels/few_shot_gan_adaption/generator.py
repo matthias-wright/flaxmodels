@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import flax.linen as nn
 from typing import Any, Tuple, List
 import h5py
+from dataclasses import  field
 from . import ops
 from .. import utils
 
@@ -137,14 +138,14 @@ class SynthesisLayer(nn.Module):
     fused_modconv: bool=False
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     def setup(self):
         noise_const = random.normal(self.rng, shape=(1, 2 ** self.res, 2 ** self.res, 1), dtype=self.dtype)
         self.noise_const = self.variable('noise_consts', 'noise_const', lambda *_: noise_const)
 
     @nn.compact
-    def __call__(self, x, dlatents, noise_mode='random', rng=random.PRNGKey(0)):
+    def __call__(self, x, dlatents, noise_mode='random', rng=None):
         """
         Run Synthesis Layer.
 
@@ -161,7 +162,9 @@ class SynthesisLayer(nn.Module):
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
         assert noise_mode in ['const', 'random', 'none']
-
+        if rng is None:
+            rng = random.PRNGKey(0)
+    
         # Affine transformation to obtain style variable.
         s = ops.LinearLayer(in_features=dlatents[:, self.layer_idx].shape[1],
                             out_features=x.shape[3],
@@ -292,10 +295,10 @@ class SynthesisBlock(nn.Module):
     fused_modconv: bool=False
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
-    def __call__(self, x, y, dlatents_in, noise_mode='random', feature_list=None, rng=random.PRNGKey(0)):
+    def __call__(self, x, y, dlatents_in, noise_mode='random', feature_list=None, rng=None):
         """
         Run Synthesis Block.
 
@@ -313,6 +316,9 @@ class SynthesisBlock(nn.Module):
         Returns:
             (tensor): Output tensor of shape [N, H', W', fmaps].
         """
+        if rng is None:
+            rng = random.PRNGKey(0)
+        
         x = x.astype(self.dtype)
         for i in range(self.num_layers):
             x = SynthesisLayer(fmaps=self.fmaps, 
@@ -382,10 +388,10 @@ class SynthesisNetwork(nn.Module):
     num_fp16_res: int=0
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
-    def __call__(self, dlatents_in, noise_mode='random', rng=random.PRNGKey(0)):
+    def __call__(self, dlatents_in, noise_mode='random', rng=None):
         """
         Run Synthesis Network.
 
@@ -401,6 +407,8 @@ class SynthesisNetwork(nn.Module):
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
         """
+        if rng is None:
+            rng = random.PRNGKey(0)
         resolution_log2 = int(np.log2(self.resolution))
         assert self.resolution == 2 ** resolution_log2 and self.resolution >= 4
 
@@ -495,7 +503,7 @@ class Generator(nn.Module):
     num_fp16_res: int=0
     clip_conv: float=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
     def __call__(self,
@@ -506,7 +514,7 @@ class Generator(nn.Module):
                  skip_w_avg_update=False,
                  train=True,
                  noise_mode='random',
-                 rng=random.PRNGKey(0)):
+                 rng=None):
         """
         Run Generator.
 
@@ -527,6 +535,8 @@ class Generator(nn.Module):
         Returns:
             (tensor): Image of shape [N, H, W, num_channels].
         """
+        if rng is None:
+            rng = random.PRNGKey(0)
         dlatents_in = MappingNetwork(z_dim=self.z_dim,
                                      c_dim=self.c_dim,
                                      w_dim=self.w_dim,

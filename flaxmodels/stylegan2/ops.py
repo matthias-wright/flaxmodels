@@ -7,6 +7,7 @@ import numpy as np
 from functools import partial
 from typing import Any
 import h5py
+from dataclasses import  field
 
 
 #------------------------------------------------------
@@ -248,7 +249,7 @@ class LinearLayer(nn.Module):
     param_dict: h5py.Group=None
     layer_name: str=None
     dtype: str='float32'
-    rng: Any=random.PRNGKey(0)
+    rng: Any=field(default_factory=lambda : random.PRNGKey(0))
 
     @nn.compact
     def __call__(self, x):
