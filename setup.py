@@ -7,7 +7,7 @@ with open(os.path.join(directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='flaxmodels',
-      version='0.1.2',
+      version='0.1.3',
       url='https://github.com/matthias-wright/flaxmodels',
       author='Matthias Wright',
       packages=find_packages(),
