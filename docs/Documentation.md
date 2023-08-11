@@ -232,7 +232,7 @@ flaxmodels.stylegan2.SynthesisNetwork(*resolution=1024, num_channels=3, w_dim=51
 * **rng (jax.numpy.ndarray)** - PRNG for initialization.
 
 #### Methods
-apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
+apply(*dlatents_in, noise_mode='random', rng=None)
 
 ##### Parameters
 * **dlatents_in (jax.numpy.ndarray)** - Latent input W, shape [batch, w_dim].
@@ -566,7 +566,7 @@ flaxmodels.few_shot_gan_adaption.SynthesisNetwork(*resolution=1024, num_channels
 * **rng (jax.numpy.ndarray)** - PRNG for initialization.
 
 #### Methods
-apply(*dlatents_in, noise_mode='random', rng=random.PRNGKey(0)*)
+apply(*dlatents_in, noise_mode='random', rng=None*)
 
 ##### Parameters
 * **dlatents_in (jax.numpy.ndarray)** - Latent input W, shape [batch, w_dim].
