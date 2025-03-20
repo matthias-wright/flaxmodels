@@ -39,6 +39,10 @@ class VGG(nn.Module):
             size is different than 224x224.
         num_classes (int):
             Number of classes. Only relevant if 'include_head' is True.
+        pooling (str):
+            Pooling function. Available options:
+                - 'max_pool': `nn.max_pool` (default)
+                - 'avg_pool': `nn.avg_pool`
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -55,6 +59,7 @@ class VGG(nn.Module):
     architecture: str='vgg16'
     include_head: bool=True
     num_classes: int=1000
+    pooling: str='max_pool'
     kernel_init: functools.partial=nn.initializers.lecun_normal()
     bias_init: functools.partial=nn.initializers.zeros
     ckpt_dir: str=None
@@ -89,6 +94,10 @@ class VGG(nn.Module):
 
         if self.include_head and (x.shape[1] != 224 or x.shape[2] != 224):
             raise ValueError('Wrong argument. If include_head is True, then input image must be of size 224x224.')
+        
+        if self.pooling not in ['avg_pool', 'max_pool']:
+            raise ValueError('Wrong argument. Possible choices for pooling are "max_pool" and "avg_pool".')
+        pool_fn = getattr(nn, self.pooling)
 
         if self.normalize:
             mean = jnp.array([0.485, 0.456, 0.406]).reshape(1, 1, 1, -1).astype(x.dtype)
@@ -107,19 +116,19 @@ class VGG(nn.Module):
         act = {}
 
         x = self._conv_block(x, features=64, num_layers=2, block_num=1, act=act, dtype=self.dtype)
-        x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
+        x = pool_fn(x, window_shape=(2, 2), strides=(2, 2))
 
         x = self._conv_block(x, features=128, num_layers=2, block_num=2, act=act, dtype=self.dtype)
-        x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
+        x = pool_fn(x, window_shape=(2, 2), strides=(2, 2))
 
         x = self._conv_block(x, features=256, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=3, act=act, dtype=self.dtype)
-        x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
+        x = pool_fn(x, window_shape=(2, 2), strides=(2, 2))
 
         x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=4, act=act, dtype=self.dtype)
-        x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
+        x = pool_fn(x, window_shape=(2, 2), strides=(2, 2))
 
         x = self._conv_block(x, features=512, num_layers=3 if self.architecture == 'vgg16' else 4, block_num=5, act=act, dtype=self.dtype)
-        x = nn.max_pool(x, window_shape=(2, 2), strides=(2, 2))
+        x = pool_fn(x, window_shape=(2, 2), strides=(2, 2))
 
         if self.include_head:
             # NCHW format because weights are from pytorch
@@ -167,6 +176,7 @@ def VGG16(output='softmax',
           normalize=True,
           include_head=True,
           num_classes=1000,
+          pooling='max_pool',
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
@@ -197,6 +207,10 @@ def VGG16(output='softmax',
             size is different than 224x224.
         num_classes (int):
             Number of classes. Only relevant if 'include_head' is True.
+        pooling (str):
+            Pooling function. Available options:
+                - 'max_pool': `nn.max_pool` (default)
+                - 'avg_pool': `nn.avg_pool`
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -216,6 +230,7 @@ def VGG16(output='softmax',
                architecture='vgg16',
                include_head=include_head,
                num_classes=num_classes,
+               pooling=pooling,
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
@@ -227,6 +242,7 @@ def VGG19(output='softmax',
           normalize=True,
           include_head=True,
           num_classes=1000,
+          pooling='max_pool',
           kernel_init=nn.initializers.lecun_normal(),
           bias_init=nn.initializers.zeros,
           ckpt_dir=None,
@@ -257,6 +273,10 @@ def VGG19(output='softmax',
             size is different than 224x224.
         num_classes (int):
             Number of classes. Only relevant if 'include_head' is True.
+        pooling (str):
+            Pooling function. Available options:
+                - 'max_pool': `nn.max_pool` (default)
+                - 'avg_pool': `nn.avg_pool`
         kernel_init (function):
             A function that takes in a shape and returns a tensor.
         bias_init (function):
@@ -276,6 +296,7 @@ def VGG19(output='softmax',
                architecture='vgg19',
                include_head=include_head,
                num_classes=num_classes,
+               pooling=pooling,
                kernel_init=kernel_init,
                bias_init=bias_init,
                ckpt_dir=ckpt_dir,
