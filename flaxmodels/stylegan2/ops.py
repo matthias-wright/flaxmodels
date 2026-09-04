@@ -28,7 +28,7 @@ def minibatch_stddev_layer(x, group_size=None, num_new_features=1):
     # [NHWC] Cast to FP32.
     y = x.astype(jnp.float32)
     # [GnHWFc] Split minibatch N into n groups of size G, and channels C into F groups of size c.
-    y = jnp.reshape(y, newshape=(G, -1, H, W, F, c))
+    y = jnp.reshape(y, shape=(G, -1, H, W, F, c))
     # [GnHWFc] Subtract mean over group.
     y -= jnp.mean(y, axis=0)
     # [nHWFc] Calc variance over group.
@@ -40,7 +40,7 @@ def minibatch_stddev_layer(x, group_size=None, num_new_features=1):
     # [nF] Cast back to original data type.
     y = y.astype(x.dtype)
     # [n11F] Add missing dimensions.
-    y = jnp.reshape(y, newshape=(-1, 1, 1, F))
+    y = jnp.reshape(y, shape=(-1, 1, 1, F))
     # [NHWC] Replicate over group and pixels.
     y = jnp.tile(y, (G, H, W, 1))
     return jnp.concatenate((x, y), axis=3)
@@ -167,9 +167,9 @@ def upfirdn2d(x, f, padding=(2, 1, 2, 1), up=1, down=1, strides=(1, 1), flip_fil
     padx0, padx1, pady0, pady1 = padding
 
     # upsample by inserting zeros
-    x = jnp.reshape(x, newshape=(B, H, 1, W, 1, C))
+    x = jnp.reshape(x, shape=(B, H, 1, W, 1, C))
     x = jnp.pad(x, pad_width=((0, 0), (0, 0), (0, up - 1), (0, 0), (0, up - 1), (0, 0)))
-    x = jnp.reshape(x, newshape=(B, H * up, W * up, C))
+    x = jnp.reshape(x, shape=(B, H * up, W * up, C))
 
     # padding
     x = jnp.pad(x, pad_width=((0, 0), (max(pady0, 0), max(pady1, 0)), (max(padx0, 0), max(padx1, 0)), (0, 0)))
